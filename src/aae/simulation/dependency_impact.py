@@ -28,9 +28,10 @@ class DependencyImpactAnalyzer:
                     for step in path_result["path"]:
                         affected_functions.append(step)
                         affected_symbols.append(step.split(".")[-1])
+        unique_functions = set(affected_functions)
         return DependencyImpactResult(
-            affected_functions=sorted(set(affected_functions)),
+            affected_functions=sorted(unique_functions),
             affected_symbols=sorted(set(affected_symbols)),
             impacted_files=sorted(impacted_files),
-            impact_size=len(set(affected_functions)) + len(impacted_files),
+            impact_size=len(unique_functions) + len(impacted_files),
         )

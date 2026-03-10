@@ -67,17 +67,42 @@ class PatchWriterAgent(BaseMicroAgent):
             repair_constraints=list(repair_guidance.get("constraints", [])),
             declared_allowed_intents=list(repair_guidance.get("declared_intents", plan.declared_intents)),
         )
-        original_text, updated_text = self.patch_generator.generate(repo_path, request)
-        validation = self.patch_validator.validate(
-            file_path=target_span.file_path,
-            original_text=original_text,
-            updated_text=updated_text,
-            target_spans=target_spans,
-            max_files=max(1, len(plan.target_files or [target_span.file_path])),
-            max_changed_lines=20,
-            declared_intents=list(repair_guidance.get("declared_intents", plan.declared_intents)),
-        )
-        diff = self.diff_constructor.build(target_span.file_path, original_text, updated_text) if validation.syntax_valid else ""
+        max_attempts = 3
+        validation = None
+        updated_text = ""
+        diff = ""
+        
+        for attempt in range(max_attempts):
+            original_text, llm_output = self.patch_generator.generate(repo_path, request)
+            updated_text = self.diff_constructor.apply_llm_edits(target_span.file_path, original_text, llm_output)
+            validation = self.patch_validator.validate(
+                file_path=target_span.file_path,
+                original_text=original_text,
+                updated_text=updated_text,
+                target_spans=target_spans,
+                max_files=max(1, len(plan.target_files or [target_span.file_path])),
+                max_changed_lines=20,
+                declared_intents=list(repair_guidance.get("declared_intents", plan.declared_intents)),
+            )
+            
+            # Check constraints
+            failed_constraints = [res.details for res in validation.constraint_results if not res.passed]
+            if validation.syntax_valid and not failed_constraints:
+                diff = self.diff_constructor.build(target_span.file_path, original_text, updated_text)
+                break
+                
+            # If failed, append feedback to prompt hint to try again
+            feedback = "Your previous patch failed validation.\nErrors: %s\nConstraint failures: %s" % (
+                ", ".join(validation.errors),
+                ", ".join(failed_constraints)
+            )
+            # Update the prompt hint for the next iteration
+            request.expected_behavior = "%s\n\n%s" % (plan.summary, feedback)
+
+        # After max_attempts, validation contains the result of the last attempt
+        if not diff and validation and validation.syntax_valid:
+            diff = self.diff_constructor.build(target_span.file_path, original_text, updated_text)
+
         changed_line_count = self.diff_optimizer.changed_line_count(diff) if diff else 0
         return {
             "plan_id": plan.id,
@@ -85,9 +110,9 @@ class PatchWriterAgent(BaseMicroAgent):
             "changed_files": [target_span.file_path] if diff else [],
             "confidence": float(plan.confidence),
             "target_spans": [span.model_dump(mode="json") for span in target_spans],
-            "syntax_valid": validation.syntax_valid,
-            "constraint_results": [result.model_dump(mode="json") for result in validation.constraint_results],
-            "validation_errors": list(validation.errors),
+            "syntax_valid": validation.syntax_valid if validation else False,
+            "constraint_results": [result.model_dump(mode="json") for result in validation.constraint_results] if validation else [],
+            "validation_errors": list(validation.errors) if validation else ["No validation ran"],
             "changed_symbols": [target_span.symbol],
             "template_family": plan.template_family,
             "declared_intents": list(plan.declared_intents),

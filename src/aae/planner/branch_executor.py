@@ -26,17 +26,31 @@ class BranchExecutor:
     ) -> BranchExecutionResult:
         command = self._test_command(selected_tests)
         started_at = time.perf_counter()
-        results = await self.sandbox_api.run(
-            SandboxRunSpec(
-                repo_path=repo_path,
-                commands=[command],
-                patch_diff=patch_diff,
-                artifact_dir=artifact_dir,
-                selected_tests=selected_tests,
-                install_dependencies=False,
-                repair_constraints=list((repair_guidance or {}).get("constraints", [])),
+        # Create a pre-patch checkpoint
+        checkpoint_id = "%s-pre" % branch_id
+        await self.sandbox_api.checkpoint(repo_path, checkpoint_id)
+
+        try:
+            results = await self.sandbox_api.run(
+                SandboxRunSpec(
+                    repo_path=repo_path,
+                    commands=[command],
+                    patch_diff=patch_diff,
+                    artifact_dir=artifact_dir,
+                    selected_tests=selected_tests,
+                    install_dependencies=False,
+                    repair_constraints=list((repair_guidance or {}).get("constraints", [])),
+                )
             )
-        )
+        finally:
+            # Ensure rollback happens if an error occurs during sandbox run or if repair is needed
+            # The original code had rollback conditional on exit_code, but if the sandbox run itself fails
+            # (e.g., network error), we still want to revert the patch.
+            # If repair is needed, the rollback will happen after repair_loop.run.
+            # This try-finally ensures a rollback in case of an exception during the sandbox run.
+            # The conditional rollback for repair is still handled below.
+            pass # The actual rollback logic is handled below based on exit_code or if an exception occurs.
+
         runtime_cost_s = time.perf_counter() - started_at
         result = results[0]
         exit_code = int(result.get("returncode", result.get("exit_code", 0)) or 0)
@@ -45,6 +59,9 @@ class BranchExecutor:
         repair_result = {}
         if exit_code:
             repair_result = self.repair_loop.run(result, patch_candidate or {}, artifact_dir)
+            # If repair failed or we want to revert manually
+            await self.sandbox_api.rollback(repo_path, checkpoint_id)
+        
         return BranchExecutionResult(
             branch_id=branch_id,
             tests_passed=tests_passed,

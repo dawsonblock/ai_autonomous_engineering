@@ -106,6 +106,9 @@ class PatchGenerationRequest(BaseModel):
     template_family: str = ""
     expected_behavior: str = ""
     target_span: PatchTargetSpan
+    top_files: List[str] = Field(default_factory=list)
+    top_functions: List[str] = Field(default_factory=list)
+    top_spans: List[Dict[str, Any]] = Field(default_factory=list)
     semantic_context: Dict[str, Any] = Field(default_factory=dict)
     constraints: Dict[str, Any] = Field(default_factory=dict)
     suspicious_context: Dict[str, Any] = Field(default_factory=dict)

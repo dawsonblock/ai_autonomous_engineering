@@ -55,6 +55,8 @@ class SimulationResult(BaseModel):
 
 class PlannerState(BaseModel):
     workflow_goal: str = ""
+    localization_result: Dict[str, Any] = Field(default_factory=dict)
+    test_failures: List[Dict[str, Any]] = Field(default_factory=list)
     graph_context: Dict[str, Any] = Field(default_factory=dict)
     memory_state: Dict[str, Any] = Field(default_factory=dict)
     prior_failures: List[str] = Field(default_factory=list)

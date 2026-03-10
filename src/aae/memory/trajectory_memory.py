@@ -4,9 +4,13 @@ import json
 from pathlib import Path
 
 
+from aae.persistence.trajectory_store import PostgresTrajectoryStore
+
+
 class TrajectoryMemory:
-    def __init__(self, base_dir: str = ".artifacts/memory/trajectories") -> None:
+    def __init__(self, base_dir: str = ".artifacts/memory/trajectories", store: PostgresTrajectoryStore | None = None) -> None:
         self.base_dir = Path(base_dir)
+        self.store = store or PostgresTrajectoryStore()
 
     def append(self, namespace: str, record: dict) -> Path:
         self.base_dir.mkdir(parents=True, exist_ok=True)

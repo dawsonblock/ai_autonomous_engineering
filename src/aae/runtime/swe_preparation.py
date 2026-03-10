@@ -139,6 +139,13 @@ class SWEPreparationService:
             behavior_snapshot = self.behavior_builder.build(repo_path=repo_path, graph_snapshot=graph.snapshot)
             behavior_model = self.behavior_store.store_snapshot(workflow_id, behavior_snapshot)
             self.memory.put(workflow_ns, "behavior_model", behavior_model)
+        
+        thread_id = str(task.payload.get("thread_id", workflow_id))
+        self.persistent_trajectory_store.save_checkpoint(
+            namespace="swe_preparation",
+            thread_id=thread_id,
+            state={"status": "prepared", "workspace": workspace_data, "graph_build": graph_build},
+        )
         behavior_snapshot = self.behavior_store.load_snapshot(workflow_id)
         behavior_engine = BehaviorQueryEngine(behavior_snapshot) if behavior_snapshot is not None else None
         trace_records = [trace.model_dump(mode="json") for trace in self.behavior_store.load_traces(workflow_id)]
@@ -216,6 +223,17 @@ class SWEPreparationService:
                     "counterexample_paths": execution_metadata.get("counterexample_paths", []),
                 }
         self.memory.put(workflow_ns, "branch_memory", branch_memory_records)
+        
+        self.persistent_trajectory_store.save_checkpoint(
+            namespace="swe_preparation",
+            thread_id=thread_id + "/exploration",
+            state={
+                "status": "explored",
+                "planner_decision": planner_decision.model_dump(mode="json"),
+                "branch_comparison": branch_comparison,
+            },
+            parent_thread_id=thread_id,
+        )
 
         trajectory_record = {
             "workflow_id": workflow_id,

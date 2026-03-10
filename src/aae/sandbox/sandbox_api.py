@@ -25,3 +25,9 @@ class SandboxAPI:
             payload["returncode"] = payload.get("exit_code", 0)
             results.append(payload)
         return results
+
+    async def checkpoint(self, repo_path: str, checkpoint_id: str) -> bool:
+        return await self.sandbox_manager.checkpoint(repo_path, checkpoint_id)
+
+    async def rollback(self, repo_path: str, checkpoint_id: str) -> bool:
+        return await self.sandbox_manager.rollback(repo_path, checkpoint_id)

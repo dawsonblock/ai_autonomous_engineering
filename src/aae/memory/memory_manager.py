@@ -21,3 +21,12 @@ class MemoryManager:
 
     def workflow_snapshot(self, namespace: str) -> dict:
         return self.workflow_memory.snapshot(namespace)
+
+    def save_checkpoint(self, namespace: str, thread_id: str, state: dict, parent_thread_id: str | None = None) -> None:
+        if hasattr(self.trajectory_memory.store, "save_checkpoint"):
+            self.trajectory_memory.store.save_checkpoint(namespace, thread_id, state, parent_thread_id)
+            
+    def get_checkpoint(self, namespace: str, thread_id: str) -> dict | None:
+        if hasattr(self.trajectory_memory.store, "get_checkpoint"):
+            return self.trajectory_memory.store.get_checkpoint(namespace, thread_id)
+        return None

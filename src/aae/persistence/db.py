@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from contextlib import contextmanager
+import typing
 from typing import Iterator
 
 
@@ -26,7 +27,7 @@ class PostgresDatabase:
             raise RuntimeError("psycopg is required for PostgreSQL persistence") from exc
 
     @contextmanager
-    def connection(self) -> Iterator[object]:
+    def connection(self) -> Iterator[typing.Any]:
         self.ensure_available()
         import psycopg
 

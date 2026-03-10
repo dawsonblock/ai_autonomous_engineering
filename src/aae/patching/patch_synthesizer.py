@@ -28,18 +28,17 @@ class PatchSynthesizer:
             return original_text, original_text, template_family
         if self.provider is not None:
             try:
-                body = self.provider.generate_body(
+                llm_output = self.provider.generate_patch(
                     request=request,
                     function_signature=self._function_signature(target_node),
-                    original_body=self._current_body(original_text, target_node),
+                    original_text=original_text,
                     prompt_hint=template["prompt_hint"],
                 )
-                updated_text = self._replace_body(original_text, target_node, body)
-                return original_text, updated_text, template_family
+                return original_text, llm_output, template_family
             except Exception:
                 pass
-        updated_text = self._fallback_edit(original_text, request, target_node, template_family)
-        return original_text, updated_text, template_family
+        fallback_text = self._fallback_edit(original_text, request, target_node, template_family)
+        return original_text, fallback_text, template_family
 
     def _find_target_function(self, tree: ast.AST, symbol: str, start_line: int) -> ast.AST | None:
         exact = None
