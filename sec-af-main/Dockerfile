@@ -1,0 +1,66 @@
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    git && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md ./
+COPY src/ src/
+
+RUN pip install --no-cache-dir --prefix=/install \
+    "agentfield>=0.1.0" \
+    "pydantic>=2.0" \
+    "httpx>=0.27" \
+    "python-dotenv>=1.0" && \
+    pip install --no-cache-dir --prefix=/install --no-deps .
+
+
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    HARNESS_PROVIDER=opencode \
+    HARNESS_MODEL=openrouter/minimax/minimax-m2.5 \
+    AI_MODEL=openrouter/minimax/minimax-m2.5 \
+    PORT=8080 \
+    HOME=/home/secaf \
+    PYTHONPATH=/app/src \
+    PATH=/home/secaf/.opencode/bin:${PATH}
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git && \
+    groupadd --gid 10001 secaf && \
+    useradd --uid 10001 --gid secaf --create-home --home-dir /home/secaf --shell /bin/sh secaf && \
+    su -s /bin/sh secaf -c "curl -fsSL https://opencode.ai/install | bash" && \
+    mkdir -p /workspaces && \
+    chown -R secaf:secaf /app /workspaces /home/secaf && \
+    rm -rf /var/lib/apt/lists/*
+
+# Generate minimal opencode config for OpenRouter provider (no MCP servers)
+RUN mkdir -p /home/secaf/.config/opencode && \
+    echo '{"$schema":"https://opencode.ai/config.json","model":"openrouter/minimax/minimax-m2.5","small_model":"openrouter/minimax/minimax-m2.5","provider":{"openrouter":{"options":{"apiKey":"{env:OPENROUTER_API_KEY}"},"models":{"minimax/minimax-m2.5":{},"moonshotai/kimi-k2.5":{}}}}}' \
+    > /home/secaf/.config/opencode/opencode.json && \
+    chown -R secaf:secaf /home/secaf/.config
+
+COPY --from=builder /install /usr/local
+COPY src/ /app/src/
+COPY prompts/ /app/prompts/
+
+USER secaf
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+CMD ["python", "-m", "sec_af.app"]

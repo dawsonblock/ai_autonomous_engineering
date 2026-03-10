@@ -1,0 +1,22 @@
+.worktrees/
+/target
+
+# Backup files
+*.log
+*.bak
+*.tmp
+*.backup
+
+# Build artifacts
+dhat-heap.json
+*.rlib
+
+# Claude outputs
+.claude_output_*.json
+
+# Documentation builds
+/docs/book/
+
+# Benchmark outputs
+/benches/*.json
+/benches/*.svg

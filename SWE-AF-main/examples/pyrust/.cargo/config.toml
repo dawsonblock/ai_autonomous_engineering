@@ -1,0 +1,26 @@
+[build]
+# Target CPU-specific optimizations for better performance
+rustflags = [
+    "-C", "target-cpu=native",
+]
+
+[target.x86_64-apple-darwin]
+# Static linking for macOS
+rustflags = [
+    "-C", "target-cpu=native",
+    "-C", "link-arg=-static-libgcc",
+]
+
+[target.x86_64-unknown-linux-gnu]
+# Static linking for Linux
+rustflags = [
+    "-C", "target-cpu=native",
+    "-C", "link-arg=-static",
+]
+
+[target.aarch64-apple-darwin]
+# Static linking for Apple Silicon
+rustflags = [
+    "-C", "target-cpu=native",
+    "-C", "link-arg=-static-libgcc",
+]

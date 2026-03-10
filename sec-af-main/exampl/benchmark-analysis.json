@@ -1,0 +1,367 @@
+{
+  "benchmark_analysis": {
+    "generated_at": "2026-03-06T02:29:50.623252Z",
+    "workflow_id": "run_20260306_055530_ek4js40b",
+    "control_plane_url": "http://localhost:9090",
+    "source": "AgentField Control Plane API (api/ui/v1/executions/enhanced)"
+  },
+  "target": {
+    "repository": "https://github.com/dolevf/Damn-Vulnerable-GraphQL-Application",
+    "branch": "main",
+    "depth_profile": "standard",
+    "strategies_used": [
+      "injection",
+      "dos",
+      "ssrf",
+      "auth",
+      "data_exposure",
+      "config_secrets",
+      "xss",
+      "crypto",
+      "supply_chain",
+      "api_security",
+      "business_logic"
+    ],
+    "strategies_count": 11,
+    "model": "openrouter/moonshotai/kimi-k2.5",
+    "provider": "opencode (harness)"
+  },
+  "execution_summary": {
+    "total_dag_edges": 82,
+    "agent_invocations_reported": 44,
+    "wall_clock_seconds": 4667.2,
+    "wall_clock_display": "77m 47s",
+    "total_compute_seconds": 22323.9,
+    "all_succeeded": true,
+    "timestamp": "2026-03-05T22:32:52.568350+00:00"
+  },
+  "pipeline_stages": {
+    "recon": {
+      "total_executions": 6,
+      "wall_clock_s": 619.8,
+      "min_task_s": 47.0,
+      "max_task_s": 212.8,
+      "tasks": {
+        "recon_phase": {
+          "count": 1,
+          "min_s": 212.8,
+          "max_s": 212.8,
+          "avg_s": 212.8,
+          "total_s": 212.8
+        },
+        "run_architecture_mapper": {
+          "count": 1,
+          "min_s": 47.0,
+          "max_s": 47.0,
+          "avg_s": 47.0,
+          "total_s": 47.0
+        },
+        "run_dependency_auditor": {
+          "count": 1,
+          "min_s": 63.8,
+          "max_s": 63.8,
+          "avg_s": 63.8,
+          "total_s": 63.8
+        },
+        "run_config_scanner": {
+          "count": 1,
+          "min_s": 91.1,
+          "max_s": 91.1,
+          "avg_s": 91.1,
+          "total_s": 91.1
+        },
+        "run_security_context_profiler": {
+          "count": 1,
+          "min_s": 86.7,
+          "max_s": 86.7,
+          "avg_s": 86.7,
+          "total_s": 86.7
+        },
+        "run_data_flow_mapper": {
+          "count": 1,
+          "min_s": 118.4,
+          "max_s": 118.4,
+          "avg_s": 118.4,
+          "total_s": 118.4
+        }
+      }
+    },
+    "hunt": {
+      "total_executions": 13,
+      "wall_clock_s": 7566.2,
+      "min_task_s": 77.7,
+      "max_task_s": 1744.1,
+      "tasks": {
+        "hunt_phase": {
+          "count": 1,
+          "min_s": 1744.1,
+          "max_s": 1744.1,
+          "avg_s": 1744.1,
+          "total_s": 1744.1
+        },
+        "run_injection_hunter": {
+          "count": 1,
+          "min_s": 639.3,
+          "max_s": 639.3,
+          "avg_s": 639.3,
+          "total_s": 639.3
+        },
+        "run_dos_hunter": {
+          "count": 1,
+          "min_s": 610.3,
+          "max_s": 610.3,
+          "avg_s": 610.3,
+          "total_s": 610.3
+        },
+        "run_ssrf_hunter": {
+          "count": 1,
+          "min_s": 187.2,
+          "max_s": 187.2,
+          "avg_s": 187.2,
+          "total_s": 187.2
+        },
+        "run_auth_hunter": {
+          "count": 1,
+          "min_s": 641.0,
+          "max_s": 641.0,
+          "avg_s": 641.0,
+          "total_s": 641.0
+        },
+        "run_data_exposure_hunter": {
+          "count": 1,
+          "min_s": 684.5,
+          "max_s": 684.5,
+          "avg_s": 684.5,
+          "total_s": 684.5
+        },
+        "run_config_secrets_hunter": {
+          "count": 1,
+          "min_s": 507.3,
+          "max_s": 507.3,
+          "avg_s": 507.3,
+          "total_s": 507.3
+        },
+        "run_xss_hunter": {
+          "count": 1,
+          "min_s": 631.2,
+          "max_s": 631.2,
+          "avg_s": 631.2,
+          "total_s": 631.2
+        },
+        "run_crypto_hunter": {
+          "count": 1,
+          "min_s": 552.3,
+          "max_s": 552.3,
+          "avg_s": 552.3,
+          "total_s": 552.3
+        },
+        "run_supply_chain_hunter": {
+          "count": 1,
+          "min_s": 507.5,
+          "max_s": 507.5,
+          "avg_s": 507.5,
+          "total_s": 507.5
+        },
+        "run_api_security_hunter": {
+          "count": 1,
+          "min_s": 392.5,
+          "max_s": 392.5,
+          "avg_s": 392.5,
+          "total_s": 392.5
+        },
+        "run_business_logic_hunter": {
+          "count": 1,
+          "min_s": 391.4,
+          "max_s": 391.4,
+          "avg_s": 391.4,
+          "total_s": 391.4
+        },
+        "run_deduplicator": {
+          "count": 1,
+          "min_s": 77.7,
+          "max_s": 77.7,
+          "avg_s": 77.7,
+          "total_s": 77.7
+        }
+      }
+    },
+    "prove": {
+      "total_executions": 31,
+      "wall_clock_s": 7309.0,
+      "min_task_s": 60.7,
+      "max_task_s": 1871.8,
+      "tasks": {
+        "prove_phase": {
+          "count": 1,
+          "min_s": 1871.8,
+          "max_s": 1871.8,
+          "avg_s": 1871.8,
+          "total_s": 1871.8
+        },
+        "run_verifier": {
+          "count": 30,
+          "min_s": 60.7,
+          "max_s": 349.8,
+          "avg_s": 181.2,
+          "total_s": 5437.2
+        }
+      }
+    },
+    "remediation": {
+      "total_executions": 31,
+      "wall_clock_s": 2161.6,
+      "min_task_s": 9.5,
+      "max_task_s": 549.6,
+      "tasks": {
+        "remediation_phase": {
+          "count": 1,
+          "min_s": 549.6,
+          "max_s": 549.6,
+          "avg_s": 549.6,
+          "total_s": 549.6
+        },
+        "run_remediation": {
+          "count": 30,
+          "min_s": 9.5,
+          "max_s": 207.9,
+          "avg_s": 53.7,
+          "total_s": 1612.0
+        }
+      }
+    }
+  },
+  "findings": {
+    "total_raw": 106,
+    "after_dedup": 61,
+    "confirmed": 28,
+    "inconclusive": 1,
+    "likely": 0,
+    "not_exploitable": 1,
+    "total_verified": 30,
+    "noise_reduction_pct": 0.94,
+    "by_severity": {
+      "critical": 0,
+      "high": 1,
+      "info": 0,
+      "low": 0,
+      "medium": 29
+    },
+    "attack_chains": 20
+  },
+  "cost_estimation": {
+    "model": "Kimi K2.5 via OpenRouter",
+    "pricing": {
+      "input_per_million_tokens_usd": 0.22,
+      "output_per_million_tokens_usd": 0.88
+    },
+    "estimated_cost_usd": {
+      "min": 0.18,
+      "max": 0.9,
+      "midpoint": 0.54,
+      "readme_reference": 1.37,
+      "note": "Cost tracking not instrumented in harness provider; estimates derived from DAG edge count, estimated LLM calls per edge, and model pricing"
+    },
+    "estimated_agent_calls": {
+      "min": 166,
+      "max": 255
+    }
+  },
+  "tool_comparison": {
+    "note": "Comparison against common security scanning tools on DVGA (21 documented vulnerability scenarios)",
+    "tools": {
+      "sec-af (this run)": {
+        "findings": 30,
+        "confirmed_exploitable": 28,
+        "false_positives": 1,
+        "noise_reduction": "94%",
+        "evidence_level": "Full taint trace + exploit proof",
+        "duration": "77m 47s",
+        "estimated_cost": "$0.54",
+        "compliance_mapping": "Yes (PCI-DSS, SOC2, OWASP, HIPAA, ISO27001)",
+        "remediation": "Yes (auto-generated for all 30 findings)",
+        "sarif_output": true
+      },
+      "semgrep_oss": {
+        "findings": "~15-25 (rule-dependent)",
+        "confirmed_exploitable": "N/A (no verification)",
+        "false_positives": "High (~40-60%)",
+        "noise_reduction": "None",
+        "evidence_level": "Pattern match only",
+        "duration": "< 30s",
+        "estimated_cost": "Free (OSS)",
+        "compliance_mapping": "Limited (via rules metadata)",
+        "remediation": "No",
+        "sarif_output": true
+      },
+      "snyk_code": {
+        "findings": "~10-20",
+        "confirmed_exploitable": "N/A (severity scoring only)",
+        "false_positives": "Medium (~20-40%)",
+        "noise_reduction": "Basic dedup",
+        "evidence_level": "Data flow (partial)",
+        "duration": "< 60s",
+        "estimated_cost": "Free tier / $25+/mo",
+        "compliance_mapping": "Limited",
+        "remediation": "Suggested fixes",
+        "sarif_output": true
+      },
+      "codeql": {
+        "findings": "~10-15",
+        "confirmed_exploitable": "N/A (taint analysis)",
+        "false_positives": "Low-Medium (~15-30%)",
+        "noise_reduction": "Query-specific",
+        "evidence_level": "Data flow (full for supported patterns)",
+        "duration": "2-10 min (build required)",
+        "estimated_cost": "Free (OSS) / GitHub Advanced Security",
+        "compliance_mapping": "No",
+        "remediation": "No",
+        "sarif_output": true
+      },
+      "bandit_python": {
+        "findings": "~20-40",
+        "confirmed_exploitable": "N/A (pattern match)",
+        "false_positives": "Very High (~50-70%)",
+        "noise_reduction": "None",
+        "evidence_level": "AST pattern match only",
+        "duration": "< 10s",
+        "estimated_cost": "Free (OSS)",
+        "compliance_mapping": "CWE mapping only",
+        "remediation": "No",
+        "sarif_output": false
+      }
+    }
+  },
+  "design_patterns": {
+    "note": "Architectural patterns uniquely enabled by composing many focused AI agents",
+    "patterns": [
+      {
+        "name": "Adversarial agent tension",
+        "description": "HUNT agents find vulnerabilities; PROVE agents try to disprove them. 4-agent verification chain (tracer, sanitization analyzer, exploit hypothesizer, verdict) encodes structural skepticism. Drives the 94% noise reduction."
+      },
+      {
+        "name": "Signal cascade with progressive narrowing",
+        "description": "106 raw \u2192 61 after AI dedup \u2192 30 after adversarial verification. Each filter uses a different kind of AI reasoning: semantic similarity for dedup, taint analysis for verification, exploit construction for confirmation."
+      },
+      {
+        "name": "Information economy via context pruning",
+        "description": "Per-strategy context routing \u2014 each agent sees only relevant information. Injection hunters get data flow maps; crypto hunters get dependency trees. Reduces hallucination and cost by preventing agents from confusing themselves with irrelevant context."
+      },
+      {
+        "name": "Streaming phase overlap",
+        "description": "Phases overlap via asyncio.Queue \u2014 hunters consume recon as it arrives, dedup processes findings as hunters complete, provers verify while later hunters still run. Reduces wall-clock time without sacrificing signal cascade."
+      },
+      {
+        "name": "Dynamic routing via AI gates",
+        "description": "Pipeline adapts at runtime: strategy activation gate, CWE expansion gate, and reachability gate all use AI to route resources dynamically based on discovered context."
+      },
+      {
+        "name": "Guided autonomy for coding agents",
+        "description": "Narrow task + flat output schema (2-4 fields) + strategy-specific context. Agent has full autonomy within boundaries. Prevents off-task behavior while preserving reasoning depth."
+      },
+      {
+        "name": "Composable reasoner DAG with full observability",
+        "description": "Every agent call flows through the control plane, creating a complete traceable DAG. New vulnerability classes = one file. The DAG is the architecture."
+      }
+    ]
+  }
+}
