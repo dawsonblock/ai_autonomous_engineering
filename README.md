@@ -2,7 +2,7 @@
 
 > A bundled engineering workspace for building a unified AI-native software factory on top of existing AgentField systems.
 
-[![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](#installation)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](#installation)
 [![Status](https://img.shields.io/badge/status-milestone%201-0ea5e9?style=for-the-badge)](#current-state)
 [![Architecture](https://img.shields.io/badge/architecture-hybrid%20controller-111827?style=for-the-badge)](#architecture)
 [![Workflows](https://img.shields.io/badge/workflows-research%20%7C%20security%20%7C%20swe%20%7C%20secure_build-16a34a?style=for-the-badge)](#workflow-presets)
@@ -573,16 +573,16 @@ Supported variables:
 
 ## Installation
 
-This package targets Python `3.12+`.
+This package targets Python `3.11+`.
 
 ```bash
-python3.12 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-If you are only inspecting code or running lightweight checks in a different interpreter, much of the code is still compatible, but the declared project target remains Python 3.12+.
+The project metadata, local sandbox defaults, and development workflow are now aligned on Python 3.11+.
 
 ## Running The Platform
 
