@@ -1,5 +1,13 @@
 """Contract models."""
 
+from aae.contracts.behavior import (
+    BehaviorEdge,
+    BehaviorNode,
+    BehaviorQueryResult,
+    BehaviorSnapshot,
+    StateTransition,
+    TraceRecord,
+)
 from aae.contracts.graph import (
     GraphBuildResult,
     GraphEdge,
@@ -8,6 +16,12 @@ from aae.contracts.graph import (
     GraphQueryResult,
     GraphSnapshot,
     RepoWorkspace,
+)
+from aae.contracts.localization import (
+    FailureEvidence,
+    LocalizationResult,
+    SuspiciousLocation,
+    SuspiciousnessScore,
 )
 from aae.contracts.micro_agents import (
     DependencyTraceResult,
@@ -19,6 +33,8 @@ from aae.contracts.micro_agents import (
     SymbolLocatorResult,
 )
 from aae.contracts.planner import (
+    BranchComparisonResult,
+    BranchExecutionResult,
     CandidatePlan,
     ConsensusDecision,
     DependencyImpactResult,
@@ -31,6 +47,12 @@ from aae.contracts.planner import (
 from aae.contracts.sandbox import SandboxRunResult, SandboxRunSpec
 
 __all__ = [
+    "BehaviorEdge",
+    "BehaviorNode",
+    "BehaviorQueryResult",
+    "BehaviorSnapshot",
+    "BranchComparisonResult",
+    "BranchExecutionResult",
     "CandidatePlan",
     "ConsensusDecision",
     "DependencyImpactResult",
@@ -53,6 +75,12 @@ __all__ = [
     "SandboxRunResult",
     "SandboxRunSpec",
     "SimulationResult",
+    "FailureEvidence",
+    "LocalizationResult",
+    "StateTransition",
+    "SuspiciousLocation",
+    "SuspiciousnessScore",
     "SymbolLocatorResult",
     "TestPredictionResult",
+    "TraceRecord",
 ]

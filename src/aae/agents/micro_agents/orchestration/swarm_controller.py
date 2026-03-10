@@ -73,35 +73,64 @@ class SwarmController:
             )
         shortlisted = self.consensus_engine.filter_candidates(pool.get_all())
         decision = self.solution_judge.select_best(shortlisted)
+        patch_candidates = []
+        for candidate in shortlisted[:3]:
+            selected_plan = next(
+                (plan for plan in plans.get("plans", []) if plan["id"] == candidate.plan_id),
+                {},
+            )
+            patch = await self.registry.get("patch_writer").run(
+                task,
+                {
+                    **context,
+                    **repo_map,
+                    **symbols,
+                    **dependencies,
+                    **bug_localization,
+                    **test_impact,
+                    **dependency_risk,
+                    "selected_plan": selected_plan,
+                },
+            )
+            simulation = self.patch_simulator.simulate(
+                candidate_plan_id=patch.get("plan_id", ""),
+                changed_files=patch.get("changed_files", []),
+                graph=context["graph"],
+                behavior=context.get("behavior_engine"),
+            )
+            patch_candidates.append(
+                {
+                    **patch,
+                    "simulation": simulation.model_dump(mode="json"),
+                    "plan_summary": selected_plan.get("summary", ""),
+                }
+            )
         selected_plan = next(
             (plan for plan in plans.get("plans", []) if plan["id"] == decision.selected_plan_id),
             plans.get("plans", [{}])[0] if plans.get("plans") else {},
         )
-        patch = await self.registry.get("patch_writer").run(
-            task,
-            {
-                **context,
-                **repo_map,
-                **symbols,
-                **dependencies,
-                **bug_localization,
-                **test_impact,
-                **dependency_risk,
-                "selected_plan": selected_plan,
-            },
+        patch = next(
+            (candidate for candidate in patch_candidates if candidate.get("plan_id") == decision.selected_plan_id),
+            patch_candidates[0] if patch_candidates else {},
         )
-        simulation = self.patch_simulator.simulate(
-            candidate_plan_id=patch.get("plan_id", ""),
-            changed_files=patch.get("changed_files", []),
-            graph=context["graph"],
-        )
+        simulation = patch.get("simulation")
+        if simulation is None:
+            simulation_model = self.patch_simulator.simulate(
+                candidate_plan_id=patch.get("plan_id", ""),
+                changed_files=patch.get("changed_files", []),
+                graph=context["graph"],
+                behavior=context.get("behavior_engine"),
+            )
+            simulation = simulation_model.model_dump(mode="json")
+        else:
+            simulation_model = None
         regression_guard = await self.registry.get("regression_guard").run(
             task,
-            {**context, **patch, **dependency_risk, **simulation.model_dump(mode="json")},
+            {**context, **patch, **dependency_risk, **simulation},
         )
         review = await self.registry.get("patch_reviewer").run(
             task,
-            {**context, **patch, "simulation": simulation.model_dump(mode="json")},
+            {**context, **patch, "simulation": simulation},
         )
         return {
             "repo_map": repo_map,
@@ -115,7 +144,8 @@ class SwarmController:
             "consensus_decision": decision.model_dump(mode="json"),
             "selected_plan": selected_plan,
             "patch_candidate": patch,
-            "simulation": simulation.model_dump(mode="json"),
+            "patch_candidates": patch_candidates,
+            "simulation": simulation,
             "regression_guard": regression_guard,
             "review": review,
         }

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import shutil
+from pathlib import Path
 
 from aae.contracts.sandbox import SandboxRunResult, SandboxRunSpec
 
@@ -19,6 +20,7 @@ class ContainerManager:
             )
 
         combined = " && ".join(spec.commands)
+        umbrella_src = Path(__file__).resolve().parents[2]
         args = [
             docker,
             "run",
@@ -27,6 +29,8 @@ class ContainerManager:
             "/workspace",
             "--volume",
             "%s:/workspace" % spec.repo_path,
+            "--volume",
+            "%s:/aae_src" % umbrella_src,
             "--cpus",
             spec.cpu_limit,
             "--memory",
@@ -34,8 +38,12 @@ class ContainerManager:
         ]
         if not spec.network_enabled:
             args.extend(["--network", "none"])
+        container_env = dict(spec.environment)
+        existing_pythonpath = container_env.get("PYTHONPATH", "")
+        container_env["PYTHONPATH"] = "/aae_src%s%s" % (":" if existing_pythonpath else "", existing_pythonpath)
         for key, value in spec.environment.items():
             args.extend(["-e", "%s=%s" % (key, value)])
+        args.extend(["-e", "PYTHONPATH=%s" % container_env["PYTHONPATH"]])
         args.extend([spec.image, "sh", "-lc", combined])
         process = await asyncio.create_subprocess_exec(
             *args,

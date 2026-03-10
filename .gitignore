@@ -1,6 +1,8 @@
 .artifacts/
 **/.artifacts/
 **/.artifacts-v2/
+.sandbox_artifacts/
+**/.sandbox_artifacts/
 __pycache__/
 **/__pycache__/
 .pytest_cache/

@@ -11,10 +11,21 @@ from aae.graph.coverage_mapper import CoverageMapper
 from aae.graph.dataflow_builder import DataflowBuilder
 from aae.graph.graph_store import SQLiteGraphStore
 from aae.graph.inheritance_builder import InheritanceBuilder
+from aae.graph.symbol_index.symbol_extractor import SymbolExtractor
+from aae.persistence.symbol_store import PostgresSymbolStore
 from aae.graph.symbol_table import SymbolTableBuilder
 
 
 class RepoGraphBuilder:
+    _IGNORED_PATH_PARTS = {
+        ".artifacts",
+        ".git",
+        ".pytest_cache",
+        ".sandbox_artifacts",
+        ".venv",
+        "__pycache__",
+    }
+
     def __init__(
         self,
         parser: PythonAstParser | None = None,
@@ -24,6 +35,8 @@ class RepoGraphBuilder:
         call_graph_builder: CallGraphBuilder | None = None,
         dataflow_builder: DataflowBuilder | None = None,
         coverage_mapper: CoverageMapper | None = None,
+        symbol_extractor: SymbolExtractor | None = None,
+        persistent_symbol_store: PostgresSymbolStore | None = None,
     ) -> None:
         self.parser = parser or PythonAstParser()
         self.symbol_table_builder = symbol_table_builder or SymbolTableBuilder()
@@ -32,6 +45,8 @@ class RepoGraphBuilder:
         self.call_graph_builder = call_graph_builder or CallGraphBuilder()
         self.dataflow_builder = dataflow_builder or DataflowBuilder()
         self.coverage_mapper = coverage_mapper or CoverageMapper()
+        self.symbol_extractor = symbol_extractor or SymbolExtractor()
+        self.persistent_symbol_store = persistent_symbol_store or PostgresSymbolStore()
 
     def build(self, repo_path: str, sqlite_path: str, json_path: str) -> GraphBuildResult:
         root = Path(repo_path).resolve()
@@ -40,6 +55,9 @@ class RepoGraphBuilder:
         edges = []
 
         for file_path in sorted(root.rglob("*")):
+            relative_parts = set(file_path.relative_to(root).parts)
+            if relative_parts & self._IGNORED_PATH_PARTS:
+                continue
             if not file_path.is_file():
                 continue
             if file_path.name.startswith("."):
@@ -85,6 +103,8 @@ class RepoGraphBuilder:
         )
         store = SQLiteGraphStore(sqlite_path=sqlite_path, json_path=json_path)
         store.save(snapshot)
+        definitions, references, coverage_items = self.symbol_extractor.extract(snapshot)
+        self.persistent_symbol_store.store_snapshot(definitions, references, coverage_items)
 
         stats = {
             "file_count": len({node.path for node in nodes if node.path}),

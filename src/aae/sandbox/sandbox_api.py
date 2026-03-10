@@ -12,4 +12,16 @@ class SandboxAPI:
         return [await self.sandbox_manager.run_job(command, workdir=repo_path) for command in commands]
 
     async def run(self, spec: SandboxRunSpec) -> list[dict]:
-        return [await self.sandbox_manager.run_job(command, workdir=spec.repo_path) for command in spec.commands]
+        if len(spec.commands) == 1:
+            result = await self.sandbox_manager.execute_spec(spec)
+            payload = result.model_dump(mode="json")
+            payload["returncode"] = payload.get("exit_code", 0)
+            return [payload]
+        results = []
+        for command in spec.commands:
+            command_spec = spec.model_copy(update={"commands": [command]})
+            result = await self.sandbox_manager.execute_spec(command_spec)
+            payload = result.model_dump(mode="json")
+            payload["returncode"] = payload.get("exit_code", 0)
+            results.append(payload)
+        return results

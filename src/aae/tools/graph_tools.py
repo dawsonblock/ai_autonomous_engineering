@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Dict, List
 
+from aae.code_analysis.context_ranker import ContextRanker
 from aae.graph.graph_query import GraphQueryEngine
 
 
@@ -23,15 +24,17 @@ def files_importing(graph: GraphQueryEngine, module: str) -> List[Dict[str, obje
 
 
 class GraphContextBuilder:
-    def __init__(self, graph: GraphQueryEngine) -> None:
+    def __init__(self, graph: GraphQueryEngine, context_ranker: ContextRanker | None = None) -> None:
         self.graph = graph
+        self.context_ranker = context_ranker or ContextRanker()
 
-    def build(self, goal: str) -> Dict[str, object]:
+    def build(self, goal: str, behavior_context: Dict[str, object] | None = None, failure_evidence: List[Dict[str, object]] | None = None) -> Dict[str, object]:
         symbols = _candidate_symbols(goal)
         symbol_context = []
         call_chains = []
         covering_tests = []
         imported_files = []
+        reference_context = []
 
         for symbol in symbols[:3]:
             matches = find_functions(self.graph, symbol)
@@ -46,14 +49,21 @@ class GraphContextBuilder:
             imports = files_importing(self.graph, symbol)
             if imports:
                 imported_files.extend(item["path"] for item in imports[:3])
+            references = self.graph.find_references(symbol).items
+            if references:
+                reference_context.append({"symbol": symbol, "references": references[:8]})
 
-        return {
+        graph_context = {
             "candidate_symbols": symbols,
             "symbol_context": symbol_context,
             "call_chains": sorted(set(call_chains)),
             "covering_tests": sorted(set(covering_tests)),
             "imported_files": sorted(set(imported_files)),
+            "reference_context": reference_context,
         }
+        ranked = self.context_ranker.rank(goal, self.graph, graph_context, behavior_context=behavior_context or {}, failure_evidence=failure_evidence or [])
+        graph_context.update(ranked)
+        return graph_context
 
 
 def _candidate_symbols(goal: str) -> List[str]:

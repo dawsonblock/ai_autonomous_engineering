@@ -46,6 +46,8 @@ class DependencyTraceResult(BaseModel):
 
 class BugLocalizationResult(BaseModel):
     candidate_files: List[CandidateFile] = Field(default_factory=list)
+    suspicious_locations: List[Dict[str, Any]] = Field(default_factory=list)
+    evidence: List[Dict[str, Any]] = Field(default_factory=list)
     root_cause_symbol: str = ""
     confidence: float = 0.0
 
@@ -72,6 +74,9 @@ class PatchPlan(BaseModel):
     confidence: float = 0.0
     target_files: List[str] = Field(default_factory=list)
     strategy: str = ""
+    template_family: str = ""
+    declared_intents: List[str] = Field(default_factory=list)
+    repair_guidance: Dict[str, Any] = Field(default_factory=dict)
 
 
 class PatchTargetSpan(BaseModel):
@@ -98,10 +103,14 @@ class PatchGenerationRequest(BaseModel):
     file_path: str
     symbol: str
     strategy: str = ""
+    template_family: str = ""
     expected_behavior: str = ""
     target_span: PatchTargetSpan
     semantic_context: Dict[str, Any] = Field(default_factory=dict)
     constraints: Dict[str, Any] = Field(default_factory=dict)
+    suspicious_context: Dict[str, Any] = Field(default_factory=dict)
+    repair_constraints: List[str] = Field(default_factory=list)
+    declared_allowed_intents: List[str] = Field(default_factory=list)
 
 
 class PatchCandidate(BaseModel):
@@ -117,6 +126,12 @@ class PatchCandidate(BaseModel):
     constraint_results: List[PatchConstraintResult] = Field(default_factory=list)
     validation_errors: List[str] = Field(default_factory=list)
     changed_symbols: List[str] = Field(default_factory=list)
+    template_family: str = ""
+    declared_intents: List[str] = Field(default_factory=list)
+    changed_line_count: int = 0
+    provider_name: str = ""
+    patch_apply_status: str = ""
+    rollback_status: str = ""
 
 
 class PatchReviewResult(BaseModel):
@@ -129,3 +144,4 @@ class FailureAnalysisResult(BaseModel):
     failure_type: str = ""
     suspected_file: str = ""
     reason: str = ""
+    repair_guidance: Dict[str, Any] = Field(default_factory=dict)

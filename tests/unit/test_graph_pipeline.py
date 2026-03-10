@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 from aae.graph.graph_query import GraphQueryEngine
 from aae.graph.repo_graph_builder import RepoGraphBuilder
@@ -43,3 +44,21 @@ def test_repo_materializer_creates_workflow_scoped_workspace(tmp_path: Path):
 
     assert Path(workspace.repo_path).exists()
     assert workspace.repo_path.startswith(str((tmp_path / "workspaces" / "wf_graph").resolve()))
+
+
+def test_repo_graph_builder_ignores_sandbox_artifacts(tmp_path: Path):
+    repo_copy = tmp_path / "repo"
+    shutil.copytree(FIXTURE_REPO, repo_copy)
+    sandbox_file = repo_copy / ".sandbox_artifacts" / "local-sandbox-1" / "workspace" / "ghost.py"
+    sandbox_file.parent.mkdir(parents=True, exist_ok=True)
+    sandbox_file.write_text("def ghost():\n    return 'ignored'\n", encoding="utf-8")
+
+    build = RepoGraphBuilder().build(
+        repo_path=str(repo_copy),
+        sqlite_path=str(tmp_path / "graph.sqlite3"),
+        json_path=str(tmp_path / "graph.json"),
+    )
+
+    graph = GraphQueryEngine.from_sqlite(build.sqlite_path)
+    assert not any(".sandbox_artifacts" in node.path for node in build.snapshot.nodes if node.path)
+    assert not graph.find_functions("ghost").items

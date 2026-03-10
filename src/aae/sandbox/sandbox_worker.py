@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from aae.contracts.sandbox import SandboxRunResult, SandboxRunSpec
-from aae.sandbox.job_scheduler import JobScheduler
+from aae.sandbox.container_runner import ContainerRunner
 
 
 class SandboxWorker:
-    def __init__(self, scheduler: JobScheduler | None = None) -> None:
-        self.scheduler = scheduler or JobScheduler()
+    def __init__(self, runner: ContainerRunner | None = None) -> None:
+        self.runner = runner or ContainerRunner()
 
     async def execute(self, spec: SandboxRunSpec) -> SandboxRunResult:
-        return await self.scheduler.schedule(spec)
+        return await self.runner.execute(spec)

@@ -16,11 +16,15 @@ class SandboxJobResult:
 
 
 class JobExecutor:
-    async def run(self, command: str, workdir: str) -> SandboxJobResult:
+    async def run(self, command: str, workdir: str, environment: dict[str, str] | None = None) -> SandboxJobResult:
         argv = _argv_for_command(command)
+        env = os.environ.copy()
+        if environment:
+            env.update(environment)
         process = await asyncio.create_subprocess_exec(
             *argv,
             cwd=workdir,
+            env=env,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )

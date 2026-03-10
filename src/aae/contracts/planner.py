@@ -50,6 +50,7 @@ class SimulationResult(BaseModel):
     risk_score: float = 0.0
     risk_reasons: List[str] = Field(default_factory=list)
     confidence: float = 0.0
+    allow_execution: bool = True
 
 
 class PlannerState(BaseModel):
@@ -80,6 +81,21 @@ class BranchMemoryRecord(BaseModel):
     score: float = 0.0
     rejection_reason: str = ""
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class BranchExecutionResult(BaseModel):
+    branch_id: str
+    tests_passed: int = 0
+    tests_failed: int = 0
+    runtime_cost_s: float = 0.0
+    regression_count: int = 0
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class BranchComparisonResult(BaseModel):
+    selected_branch_id: str = ""
+    rankings: List[Dict[str, Any]] = Field(default_factory=list)
+    summary: Dict[str, Any] = Field(default_factory=dict)
 
 
 class PlannerDecision(BaseModel):

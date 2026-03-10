@@ -9,16 +9,19 @@ class PatchReviewerAgent(BaseMicroAgent):
     async def run(self, task, context):
         simulation = context.get("simulation", {})
         risk_score = float(simulation.get("risk_score", 0.0))
+        allow_execution = bool(simulation.get("allow_execution", True))
         changed_files = context.get("changed_files", [])
         validation_errors = context.get("validation_errors", [])
         risks = []
         if risk_score > 0.65:
             risks.append("predicted risk score is elevated")
+        if not allow_execution:
+            risks.append("simulation rejected execution")
         if not changed_files:
             risks.append("patch candidate did not identify changed files")
         risks.extend(validation_errors)
         return {
-            "accept": risk_score <= 0.65 and bool(changed_files) and not validation_errors,
+            "accept": risk_score <= 0.65 and allow_execution and bool(changed_files) and not validation_errors,
             "risks": risks,
             "followups": ["add regression coverage for impacted path"] if changed_files else [],
         }

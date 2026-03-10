@@ -1,0 +1,12 @@
+[
+  {
+    "case_id": "guard-empty-token",
+    "repo_path": "tests/fixtures/benchmark_guard_repo",
+    "goal": "Fix authenticate empty token failure"
+  },
+  {
+    "case_id": "guard-none-username",
+    "repo_path": "tests/fixtures/benchmark_profile_repo",
+    "goal": "Fix create_profile None username failure"
+  }
+]

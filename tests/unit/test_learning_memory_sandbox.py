@@ -64,8 +64,13 @@ def test_persistent_memories_round_trip(tmp_path: Path):
 
 @pytest.mark.anyio
 async def test_sandbox_api_runs_commands(tmp_path: Path):
+    script_path = tmp_path / "script.py"
+    script_path.write_text("print('ok')\n", encoding="utf-8")
     sandbox = SandboxAPI()
-    results = await sandbox.run_tests(str(tmp_path), ['%s -c "print(\\"ok\\")"' % sys.executable])
+    results = await sandbox.run_tests(str(tmp_path), ['%s %s' % (sys.executable, script_path.name)])
 
     assert results[0]["returncode"] == 0
     assert "ok" in results[0]["stdout"]
+    assert results[0]["trace_paths"]
+    assert results[0]["artifact_paths"]
+    assert not (tmp_path / ".sandbox_artifacts").exists()

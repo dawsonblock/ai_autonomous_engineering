@@ -21,11 +21,17 @@ class PlannerRuntime:
             tool_hints=swarm_result.get("tool_recommendations", {}),
         )
         candidates = []
-        for candidate in swarm_result.get("shortlisted_candidates", []):
+        source_candidates = swarm_result.get("patch_candidates", []) or swarm_result.get("shortlisted_candidates", [])
+        for candidate in source_candidates:
             candidate = dict(candidate)
-            simulation = swarm_result.get("simulation", {})
+            simulation = candidate.get("simulation") or swarm_result.get("simulation", {})
             candidate.setdefault("predicted_test_count", len(simulation.get("test_prediction", {}).get("affected_tests", [])))
             candidate.setdefault("risk_score", float(simulation.get("risk_score", 0.0)))
+            candidate.setdefault("suspicious_locations", swarm_result.get("bug_localization", {}).get("suspicious_locations", []))
+            candidate.setdefault("evidence", swarm_result.get("bug_localization", {}).get("evidence", []))
+            candidate.setdefault("ranked_files", graph_context.get("ranked_files", []))
+            candidate.setdefault("related_symbols", graph_context.get("reference_context", []))
+            candidate.setdefault("repair_guidance", candidate.get("repair_guidance") or swarm_result.get("selected_plan", {}).get("repair_guidance", {}))
             candidates.append(candidate)
         if not candidates and swarm_result.get("selected_plan"):
             selected = dict(swarm_result["selected_plan"])

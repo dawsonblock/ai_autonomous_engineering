@@ -14,6 +14,16 @@ class SandboxRunSpec(BaseModel):
     cpu_limit: str = "1.0"
     memory_limit: str = "512m"
     environment: Dict[str, str] = Field(default_factory=dict)
+    artifact_dir: str = ""
+    patch_diff: str = ""
+    patch_bundle: List[str] = Field(default_factory=list)
+    repair_constraints: List[str] = Field(default_factory=list)
+    trace_enabled: bool = True
+    install_dependencies: bool = False
+    selected_tests: List[str] = Field(default_factory=list)
+    command_id: str = ""
+    tracing_root: str = ""
+    ephemeral_test_paths: List[str] = Field(default_factory=list)
 
 
 class SandboxRunResult(BaseModel):
@@ -26,3 +36,11 @@ class SandboxRunResult(BaseModel):
     coverage_path: str = ""
     patch_apply_status: str = ""
     transport: str = "local"
+    trace_paths: List[str] = Field(default_factory=list)
+    test_output_paths: List[str] = Field(default_factory=list)
+    dependency_install_status: str = ""
+    applied_workspace: str = ""
+    editable_workspace: str = ""
+    rollback_status: str = ""
+    counterexample_paths: List[str] = Field(default_factory=list)
+    patch_apply_details: Dict[str, object] = Field(default_factory=dict)

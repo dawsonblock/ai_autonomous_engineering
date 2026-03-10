@@ -41,5 +41,14 @@ async def test_runtime_task_preparer_materializes_workspace_and_builds_graph(tmp
     assert Path(graph_build["sqlite_path"]).exists()
     assert Path(graph_build["json_path"]).exists()
     assert prepared_swe.payload["graph_context"]["candidate_symbols"]
+    assert prepared_swe.payload["behavior_model"]["snapshot_path"]
+    assert prepared_swe.payload["behavior_context"]["suspicious_files"]
+    assert prepared_swe.payload["swarm_context"]["bug_localization"]["suspicious_locations"]
+    assert prepared_swe.payload["swarm_context"]["patch_candidates"]
     assert prepared_swe.payload["swarm_context"]["consensus_decision"]["selected_plan_id"]
     assert prepared_swe.payload["planner_decision"]["selected_branch_id"]
+    assert prepared_swe.payload["exploration_results"]
+    assert prepared_swe.payload["branch_comparison"]["selected_branch_id"]
+    assert memory.get("workflow/wf_prepare", "patch_candidates")
+    assert memory.get("workflow/wf_prepare", "simulation_results")
+    assert memory.get("workflow/wf_prepare", "evaluation_runs")

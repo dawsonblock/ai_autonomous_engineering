@@ -160,3 +160,30 @@ class GraphQueryEngine:
             items=sorted(matches, key=lambda item: item["path"]),
             summary={"file_count": len(matches), "module": module},
         )
+
+    def find_references(self, symbol: str) -> GraphQueryResult:
+        references = []
+        for reference in self.symbol_index.find_references(symbol):
+            references.append(
+                {
+                    "source_symbol_id": reference.source_symbol_id,
+                    "resolved_symbol_id": reference.resolved_symbol_id,
+                    "referenced_name": reference.referenced_name,
+                    "file_path": reference.file_path,
+                    "line": reference.line,
+                    "reference_type": reference.reference_type,
+                }
+            )
+        return GraphQueryResult(
+            query_name="find_references",
+            items=references,
+            summary={"reference_count": len(references), "symbol": symbol},
+        )
+
+    def rank_related_symbols(self, symbol: str) -> GraphQueryResult:
+        items = list(self.symbol_index.rank_related_symbols(symbol))
+        return GraphQueryResult(
+            query_name="rank_related_symbols",
+            items=items,
+            summary={"related_count": len(items), "symbol": symbol},
+        )
