@@ -20,6 +20,12 @@ class GraphEdgeType(str, Enum):
     IMPORTS = "IMPORTS"
     DEFINES = "DEFINES"
     TESTS = "TESTS"
+    INHERITS = "INHERITS"
+    OVERRIDES = "OVERRIDES"
+    IMPLEMENTS = "IMPLEMENTS"
+    READS = "READS"
+    WRITES = "WRITES"
+    PARAM_FLOW = "PARAM_FLOW"
 
 
 class GraphNode(BaseModel):
@@ -39,11 +45,56 @@ class GraphEdge(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
+class SymbolDefinition(BaseModel):
+    symbol_id: str
+    name: str
+    qualname: str
+    symbol_type: str
+    file_path: str
+    line: Optional[int] = None
+    class_scope: str = ""
+    signature: str = ""
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SymbolReference(BaseModel):
+    source_symbol_id: str = ""
+    referenced_name: str
+    resolved_symbol_id: str = ""
+    file_path: str
+    line: Optional[int] = None
+    reference_type: str = ""
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class CoverageAssociation(BaseModel):
+    test_node_id: str
+    target_symbol_id: str = ""
+    target_path: str = ""
+    source: str = "static"
+    confidence: float = 0.0
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SemanticSummary(BaseModel):
+    symbol_id: str
+    cfg_nodes: int = 0
+    branch_points: int = 0
+    inferred_types: Dict[str, str] = Field(default_factory=dict)
+    signature: str = ""
+    resolved_calls: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
 class GraphSnapshot(BaseModel):
     root_path: str
     language: str = "python-first"
     nodes: List[GraphNode] = Field(default_factory=list)
     edges: List[GraphEdge] = Field(default_factory=list)
+    symbols: List[SymbolDefinition] = Field(default_factory=list)
+    references: List[SymbolReference] = Field(default_factory=list)
+    coverage: List[CoverageAssociation] = Field(default_factory=list)
+    semantic_summaries: List[SemanticSummary] = Field(default_factory=list)
 
 
 class GraphBuildResult(BaseModel):

@@ -15,6 +15,7 @@ class CandidatePlan(BaseModel):
     predicted_test_count: int = 0
     risk_score: float = 0.0
     diff: str = ""
+    risk_reasons: List[str] = Field(default_factory=list)
 
 
 class JudgeScoreBreakdown(BaseModel):
@@ -31,6 +32,7 @@ class ConsensusDecision(BaseModel):
 
 class DependencyImpactResult(BaseModel):
     affected_functions: List[str] = Field(default_factory=list)
+    affected_symbols: List[str] = Field(default_factory=list)
     impacted_files: List[str] = Field(default_factory=list)
     impact_size: int = 0
 
@@ -46,6 +48,8 @@ class SimulationResult(BaseModel):
     dependency_impact: DependencyImpactResult = Field(default_factory=DependencyImpactResult)
     test_prediction: TestPredictionResult = Field(default_factory=TestPredictionResult)
     risk_score: float = 0.0
+    risk_reasons: List[str] = Field(default_factory=list)
+    confidence: float = 0.0
 
 
 class PlannerState(BaseModel):
@@ -67,6 +71,14 @@ class PlanBranch(BaseModel):
     branch_id: str
     actions: List[PlannerAction] = Field(default_factory=list)
     score: float = 0.0
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class BranchMemoryRecord(BaseModel):
+    branch_id: str
+    status: str
+    score: float = 0.0
+    rejection_reason: str = ""
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 

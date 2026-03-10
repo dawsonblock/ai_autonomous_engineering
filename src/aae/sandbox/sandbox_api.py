@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from aae.contracts.sandbox import SandboxRunSpec
 from aae.sandbox.sandbox_manager import SandboxManager
 
 
@@ -9,3 +10,6 @@ class SandboxAPI:
 
     async def run_tests(self, repo_path: str, commands: list[str]) -> list[dict]:
         return [await self.sandbox_manager.run_job(command, workdir=repo_path) for command in commands]
+
+    async def run(self, spec: SandboxRunSpec) -> list[dict]:
+        return [await self.sandbox_manager.run_job(command, workdir=spec.repo_path) for command in spec.commands]

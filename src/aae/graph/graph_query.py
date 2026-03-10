@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from typing import Dict, Iterable, List
 
+from aae.code_analysis.symbol_index import SymbolIndex
 from aae.contracts.graph import GraphEdgeType, GraphNodeType, GraphQueryResult, GraphSnapshot
 from aae.graph.graph_store import SQLiteGraphStore
 
@@ -11,38 +12,58 @@ class GraphQueryEngine:
     def __init__(self, snapshot: GraphSnapshot) -> None:
         self.snapshot = snapshot
         self.nodes = {node.id: node for node in snapshot.nodes}
+        self.symbols = {symbol.symbol_id: symbol for symbol in snapshot.symbols}
         self.outgoing: Dict[str, List] = defaultdict(list)
         self.incoming: Dict[str, List] = defaultdict(list)
         for edge in snapshot.edges:
             self.outgoing[edge.source_id].append(edge)
             self.incoming[edge.target_id].append(edge)
+        self.symbol_index = SymbolIndex.from_snapshot(snapshot)
 
     @classmethod
     def from_sqlite(cls, sqlite_path: str) -> "GraphQueryEngine":
         return cls(SQLiteGraphStore(sqlite_path).load())
 
     def find_functions(self, symbol: str) -> GraphQueryResult:
-        symbol_lower = symbol.lower()
+        definitions = self.symbol_index.lookup(symbol)
+        seen = set()
         matches = []
-        for node in self.nodes.values():
-            if node.node_type not in {GraphNodeType.FUNCTION, GraphNodeType.TEST}:
+        for definition in definitions:
+            if definition.symbol_type not in {"function", "test"}:
                 continue
-            haystack = [node.name.lower(), node.qualname.lower()]
-            if any(symbol_lower in item for item in haystack):
+            if definition.symbol_id in seen:
+                continue
+            seen.add(definition.symbol_id)
+            matches.append(
+                {
+                    "id": definition.symbol_id,
+                    "name": definition.name,
+                    "qualname": definition.qualname,
+                    "path": definition.file_path,
+                    "line": definition.line,
+                    "signature": definition.signature,
+                    "class_scope": definition.class_scope,
+                }
+            )
+            for edge in self.outgoing.get(definition.symbol_id, []):
+                if edge.edge_type != GraphEdgeType.OVERRIDES:
+                    continue
+                overridden = self.symbols.get(edge.target_id)
+                if overridden is None or overridden.symbol_id in seen:
+                    continue
+                seen.add(overridden.symbol_id)
                 matches.append(
                     {
-                        "id": node.id,
-                        "name": node.name,
-                        "qualname": node.qualname,
-                        "path": node.path,
-                        "line": node.line,
+                        "id": overridden.symbol_id,
+                        "name": overridden.name,
+                        "qualname": overridden.qualname,
+                        "path": overridden.file_path,
+                        "line": overridden.line,
+                        "signature": overridden.signature,
+                        "class_scope": overridden.class_scope,
                     }
                 )
-        return GraphQueryResult(
-            query_name="find_functions",
-            items=sorted(matches, key=lambda item: (item["path"], item["line"] or 0)),
-            summary={"match_count": len(matches), "symbol": symbol},
-        )
+        return GraphQueryResult(query_name="find_functions", items=sorted(matches, key=lambda item: (item["path"], item["line"] or 0)), summary={"match_count": len(matches), "symbol": symbol})
 
     def trace_call_chain(self, symbol: str, max_depth: int = 5) -> GraphQueryResult:
         start_items = self.find_functions(symbol).items
@@ -56,6 +77,7 @@ class GraphQueryEngine:
                     paths.append(path)
                     continue
                 call_edges = [edge for edge in self.outgoing[node_id] if edge.edge_type == GraphEdgeType.CALLS]
+                call_edges.extend([edge for edge in self.outgoing[node_id] if edge.edge_type == GraphEdgeType.OVERRIDES])
                 if not call_edges:
                     paths.append(path)
                     continue
@@ -74,19 +96,46 @@ class GraphQueryEngine:
         functions = self.find_functions(symbol).items
         function_ids = {item["id"] for item in functions}
         tests = []
+        seen = set()
         for function_id in function_ids:
-            for edge in self.incoming.get(function_id, []):
-                if edge.edge_type != GraphEdgeType.TESTS:
+            for association in self.snapshot.coverage:
+                if association.target_symbol_id != function_id:
                     continue
-                test_node = self.nodes.get(edge.source_id)
+                test_node = self.nodes.get(association.test_node_id)
                 if test_node is None:
                     continue
+                key = (test_node.id, association.source)
+                if key in seen:
+                    continue
+                seen.add(key)
                 tests.append(
                     {
                         "id": test_node.id,
                         "name": test_node.name,
                         "qualname": test_node.qualname,
                         "path": test_node.path,
+                        "source": association.source,
+                        "confidence": association.confidence,
+                    }
+                )
+            for edge in self.incoming.get(function_id, []):
+                if edge.edge_type != GraphEdgeType.TESTS:
+                    continue
+                test_node = self.nodes.get(edge.source_id)
+                if test_node is None:
+                    continue
+                key = (test_node.id, edge.metadata.get("source", "graph"))
+                if key in seen:
+                    continue
+                seen.add(key)
+                tests.append(
+                    {
+                        "id": test_node.id,
+                        "name": test_node.name,
+                        "qualname": test_node.qualname,
+                        "path": test_node.path,
+                        "source": edge.metadata.get("source", "graph"),
+                        "confidence": edge.metadata.get("confidence", 0.5),
                     }
                 )
         return GraphQueryResult(

@@ -28,6 +28,7 @@ from aae.contracts.planner import (
     SimulationResult,
     TestPredictionResult,
 )
+from aae.contracts.sandbox import SandboxRunResult, SandboxRunSpec
 
 __all__ = [
     "CandidatePlan",
@@ -49,6 +50,8 @@ __all__ = [
     "PlannerState",
     "RepoMapResult",
     "RepoWorkspace",
+    "SandboxRunResult",
+    "SandboxRunSpec",
     "SimulationResult",
     "SymbolLocatorResult",
     "TestPredictionResult",

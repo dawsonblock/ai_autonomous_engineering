@@ -36,5 +36,10 @@ class PlannerRuntime:
         return PlannerDecision(
             selected_branch_id=selected_branch_id,
             branches=branches,
-            rationale={"goal": workflow_goal, "candidate_count": len(candidates), "state": planner_state.model_dump(mode="json")},
+            rationale={
+                "goal": workflow_goal,
+                "candidate_count": len(candidates),
+                "state": planner_state.model_dump(mode="json"),
+                "branch_memory": [record.model_dump(mode="json") for record in self.planner.branch_memory.records()],
+            },
         )

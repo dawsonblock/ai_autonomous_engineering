@@ -19,9 +19,16 @@ class PatchSimulator:
         impact = self.dependency_impact.analyze(graph, changed_files)
         test_prediction = self.test_prediction.predict(graph, impact.affected_functions, changed_files)
         risk_score = min(1.0, (impact.impact_size * 0.08) + (len(test_prediction.predicted_failures) * 0.15))
+        risk_reasons = []
+        if impact.impact_size > 3:
+            risk_reasons.append("broad dependency impact")
+        if test_prediction.predicted_failures:
+            risk_reasons.append("predicted failing tests: %s" % ", ".join(test_prediction.predicted_failures))
         return SimulationResult(
             candidate_plan_id=candidate_plan_id,
             dependency_impact=impact,
             test_prediction=test_prediction,
             risk_score=risk_score,
+            risk_reasons=risk_reasons,
+            confidence=0.8 if impact.impact_size else 0.4,
         )

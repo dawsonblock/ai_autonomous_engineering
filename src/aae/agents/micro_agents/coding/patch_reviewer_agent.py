@@ -10,13 +10,15 @@ class PatchReviewerAgent(BaseMicroAgent):
         simulation = context.get("simulation", {})
         risk_score = float(simulation.get("risk_score", 0.0))
         changed_files = context.get("changed_files", [])
+        validation_errors = context.get("validation_errors", [])
         risks = []
         if risk_score > 0.65:
             risks.append("predicted risk score is elevated")
         if not changed_files:
             risks.append("patch candidate did not identify changed files")
+        risks.extend(validation_errors)
         return {
-            "accept": risk_score <= 0.65 and bool(changed_files),
+            "accept": risk_score <= 0.65 and bool(changed_files) and not validation_errors,
             "risks": risks,
             "followups": ["add regression coverage for impacted path"] if changed_files else [],
         }
