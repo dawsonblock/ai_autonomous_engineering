@@ -19,6 +19,7 @@ from aae.events.event_bus import EventBus
 from aae.events.event_logger import EventLogger
 from aae.memory.in_memory import InMemoryMemoryStore
 from aae.runtime.config import SystemConfig
+from aae.runtime.swe_preparation import RuntimeTaskPreparer
 from aae.runtime.workflow_presets import research_only, secure_build, security_only, swe_only
 
 
@@ -43,12 +44,19 @@ def build_runtime(config_path: str) -> tuple[WorkflowController, AgentFieldClien
         logger=EventLogger(artifacts_dir=artifacts_dir),
         redis_url=os.getenv("REDIS_URL"),
     )
+    memory = InMemoryMemoryStore()
+    task_preparer = RuntimeTaskPreparer(
+        memory=memory,
+        event_bus=event_bus,
+        artifacts_dir=artifacts_dir,
+    )
     controller = WorkflowController(
         registry=registry,
-        memory=InMemoryMemoryStore(),
+        memory=memory,
         event_bus=event_bus,
         scheduler=TaskScheduler(max_concurrency=config.controller.max_concurrency),
         retry_policy=RetryPolicy(),
+        task_preparer=task_preparer,
     )
     return controller, client
 

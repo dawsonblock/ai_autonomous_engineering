@@ -22,12 +22,14 @@ class WorkflowController:
         event_bus: EventBus,
         scheduler: TaskScheduler | None = None,
         retry_policy: RetryPolicy | None = None,
+        task_preparer: Any | None = None,
     ) -> None:
         self.registry = registry
         self.memory = memory
         self.event_bus = event_bus
         self.scheduler = scheduler or TaskScheduler()
         self.retry_policy = retry_policy or RetryPolicy()
+        self.task_preparer = task_preparer
 
     async def run_workflow(self, workflow: WorkflowSpec) -> Dict[str, Any]:
         graph = TaskGraph(workflow)
@@ -150,9 +152,12 @@ class WorkflowController:
         return int(task_entry.get("attempt", 0))
 
     async def _dispatch_task(self, workflow_id: str, task: TaskSpec) -> TaskResult:
-        adapter = self.registry.get(task.agent_name)
         workflow_ns = "workflow/%s" % workflow_id
         memory_snapshot = self.memory.snapshot(workflow_ns)
+        if self.task_preparer is not None:
+            task = await self.task_preparer.prepare(workflow_id, task, memory_snapshot)
+            memory_snapshot = self.memory.snapshot(workflow_ns)
+        adapter = self.registry.get(task.agent_name)
         return await adapter.execute(task, memory_snapshot)
 
     async def _process_result(

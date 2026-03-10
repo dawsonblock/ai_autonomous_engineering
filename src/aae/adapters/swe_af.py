@@ -24,7 +24,7 @@ class SWEAFAdapter(AgentAdapter):
         started_at = now_utc()
         attempt = _attempt_from_memory(memory_snapshot, task.task_id) + 1
         payload = dict(task.payload)
-        payload["additional_context"] = build_additional_context(memory_snapshot)
+        payload["additional_context"] = build_additional_context(memory_snapshot, payload)
         try:
             raw = await self.client.execute(self.target, payload, task.timeout_s)
             normalized = normalize_swe_output(raw)
@@ -34,7 +34,7 @@ class SWEAFAdapter(AgentAdapter):
             return self._failure(task, attempt, exc, started_at)
 
 
-def build_additional_context(memory_snapshot: Dict[str, Any]) -> str:
+def build_additional_context(memory_snapshot: Dict[str, Any], payload: Dict[str, Any] | None = None) -> str:
     task_results = memory_snapshot.get("task_results", {})
     research = ((task_results.get("research") or {}).get("normalized_output") or {}).get(
         "context_for_downstream", {}
@@ -46,6 +46,18 @@ def build_additional_context(memory_snapshot: Dict[str, Any]) -> str:
         "research": research.get("research", {}),
         "security": security.get("security", {}),
     }
+    if payload:
+        for key in [
+            "repo_path",
+            "repo_workspace",
+            "graph_build",
+            "graph_context",
+            "swarm_context",
+            "tool_recommendations",
+            "planner_decision",
+        ]:
+            if key in payload:
+                structured[key] = payload[key]
     return json.dumps(structured, indent=2, sort_keys=True)
 
 

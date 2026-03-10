@@ -18,6 +18,10 @@ class AgentFieldConfig(BaseModel):
 class ControllerConfig(BaseModel):
     max_concurrency: int = 4
     artifacts_dir: str = ".artifacts"
+    workspaces_subdir: str = "workspaces"
+    graphs_subdir: str = "graphs"
+    memory_subdir: str = "memory"
+    sandbox_subdir: str = "sandbox"
 
 
 class SiblingConfig(BaseModel):
