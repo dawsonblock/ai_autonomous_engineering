@@ -26,13 +26,15 @@ class PlannerService:
 
     async def decide_and_explore(self, workflow_id: str, goal: str, repo_path: str, graph_context: dict, memory_state: dict, swarm_result: dict):
         meta_profile = self.load_meta_profile()
+        runtime_overrides = self.load_runtime_overrides()
         planner_decision = self.planner_runtime.plan(
             workflow_goal=goal,
             graph_context=graph_context,
-            memory_state={**memory_state, "meta_strategy_profile": meta_profile},
+            memory_state={**memory_state, "meta_strategy_profile": meta_profile, "runtime_overrides": runtime_overrides},
             swarm_result=swarm_result,
         )
         planner_decision.rationale["meta_strategy_profile"] = meta_profile
+        planner_decision.rationale["runtime_overrides"] = runtime_overrides
         exploration_branches = self.branch_generator.generate(planner_decision.model_dump(mode="json"), swarm_result)
         exploration_results = await self.experiment_runner.run(
             repo_path=repo_path,
@@ -62,5 +64,14 @@ class PlannerService:
             return {}
         try:
             return json.loads(profile_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
+
+    def load_runtime_overrides(self) -> dict:
+        override_path = Path(self.artifacts_dir) / "dashboard" / "runtime_overrides.json"
+        if not override_path.exists():
+            return {}
+        try:
+            return json.loads(override_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             return {}

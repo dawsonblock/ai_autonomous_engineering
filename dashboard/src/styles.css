@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply min-h-screen bg-ink-50 font-sans text-ink-900 antialiased;
+  background-image:
+    radial-gradient(circle at top left, rgba(22, 119, 255, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(16, 152, 104, 0.08), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 248, 245, 0.98));
+}
+
+.dark body {
+  @apply bg-ink-900 text-ink-50;
+  background-image:
+    radial-gradient(circle at top left, rgba(22, 119, 255, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(16, 152, 104, 0.1), transparent 20%),
+    linear-gradient(180deg, rgba(26, 29, 35, 0.98), rgba(18, 20, 24, 0.98));
+}
+
+#root {
+  @apply min-h-screen;
+}
+
+.panel {
+  @apply rounded-2xl border border-white/70 bg-white/85 shadow-panel backdrop-blur dark:border-white/10 dark:bg-white/5;
+}
+
+.panel-muted {
+  @apply rounded-xl border border-ink-200/70 bg-ink-50/70 dark:border-white/10 dark:bg-white/5;
+}
+
+.code-block {
+  @apply overflow-auto rounded-xl bg-ink-900 p-4 font-mono text-sm text-ink-50;
+}

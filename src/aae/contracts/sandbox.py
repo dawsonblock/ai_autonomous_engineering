@@ -32,6 +32,9 @@ class SandboxRunResult(BaseModel):
     exit_code: int
     stdout: str = ""
     stderr: str = ""
+    execution_mode: str = "local"
+    trust_level: str = "degraded"
+    fallback_reason: str = ""
     artifact_paths: List[str] = Field(default_factory=list)
     coverage_path: str = ""
     patch_apply_status: str = ""

@@ -41,6 +41,9 @@ class SandboxManager:
             "returncode": result.exit_code,
             "stdout": result.stdout,
             "stderr": result.stderr,
+            "execution_mode": result.execution_mode,
+            "trust_level": result.trust_level,
+            "fallback_reason": result.fallback_reason,
             "transport": result.transport,
             "patch_apply_status": result.patch_apply_status,
             "artifact_paths": result.artifact_paths,
@@ -82,6 +85,9 @@ class SandboxManager:
                             "exit_code": local_result.returncode,
                             "stdout": local_result.stdout,
                             "stderr": local_result.stderr,
+                            "execution_mode": "local",
+                            "trust_level": "degraded",
+                            "fallback_reason": result.fallback_reason or "docker unavailable; executed locally",
                             "applied_workspace": workspace,
                             "trace_paths": [trace_path] if Path(trace_path).exists() else [],
                             "artifact_paths": [trace_path] if Path(trace_path).exists() else [],
@@ -98,6 +104,8 @@ class SandboxManager:
                 result.model_copy(
                     update={
                         "container_id": lease.container_id,
+                        "execution_mode": result.execution_mode or "docker",
+                        "trust_level": result.trust_level or "strict",
                         "applied_workspace": workspace,
                         "trace_paths": [trace_path] if Path(trace_path).exists() else [],
                         "artifact_paths": [trace_path] if Path(trace_path).exists() else [],

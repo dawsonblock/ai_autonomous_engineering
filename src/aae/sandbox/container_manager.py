@@ -15,6 +15,9 @@ class ContainerManager:
                 container_id="local-fallback",
                 commands=spec.commands,
                 exit_code=0,
+                execution_mode="local",
+                trust_level="degraded",
+                fallback_reason="docker executable not available",
                 patch_apply_status="docker-unavailable",
                 transport="local-fallback",
             )
@@ -60,6 +63,9 @@ class ContainerManager:
                 exit_code=0,
                 stdout=decoded_stdout,
                 stderr=decoded_stderr,
+                execution_mode="local",
+                trust_level="degraded",
+                fallback_reason="docker daemon unavailable",
                 patch_apply_status="docker-unavailable",
                 transport="local-fallback",
             )
@@ -69,6 +75,8 @@ class ContainerManager:
             exit_code=process.returncode,
             stdout=decoded_stdout,
             stderr=decoded_stderr,
+            execution_mode="docker",
+            trust_level="strict",
             patch_apply_status="applied",
             transport="docker",
         )

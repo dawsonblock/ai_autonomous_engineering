@@ -9,10 +9,12 @@ description = "Umbrella AI kernel for orchestrating AgentField-powered engineeri
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.115",
     "httpx>=0.27",
     "pydantic>=2.0",
     "psycopg>=3.1",
     "PyYAML>=6.0",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
@@ -22,6 +24,7 @@ dev = [
 ]
 
 [project.scripts]
+aae-dashboard = "aae.dashboard_api.server:main"
 aae-launcher = "aae.runtime.system_launcher:main"
 
 [tool.setuptools.packages.find]

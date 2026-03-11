@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Tuple
+from datetime import datetime, timezone
+from typing import Any, Dict, List
 
 from aae.contracts.results import TaskError, TaskResult, TaskResultStatus
 from aae.contracts.tasks import TaskSpec, TaskState
@@ -30,10 +31,43 @@ class WorkflowController:
         self.scheduler = scheduler or TaskScheduler()
         self.retry_policy = retry_policy or RetryPolicy()
         self.task_preparer = task_preparer
+        self._active_workflows: Dict[str, Dict[str, Any]] = {}
+        self._workflow_cancel_events: Dict[str, asyncio.Event] = {}
+
+    async def cancel_workflow(self, workflow_id: str) -> bool:
+        cancel_event = self._workflow_cancel_events.get(workflow_id)
+        if cancel_event is None:
+            return False
+        cancel_event.set()
+        state = self._active_workflows.get(workflow_id)
+        if state is not None:
+            state["status"] = "cancel_requested"
+            state["updated_at"] = self._timestamp()
+        return True
+
+    def list_active_workflows(self) -> List[Dict[str, Any]]:
+        return [dict(item) for item in self._active_workflows.values() if item.get("status") in {"running", "cancel_requested"}]
+
+    def get_workflow_state(self, workflow_id: str) -> Dict[str, Any] | None:
+        state = self._active_workflows.get(workflow_id)
+        return dict(state) if state is not None else None
 
     async def run_workflow(self, workflow: WorkflowSpec) -> Dict[str, Any]:
         graph = TaskGraph(workflow)
         workflow_ns = "workflow/%s" % workflow.workflow_id
+        cancel_event = asyncio.Event()
+        self._workflow_cancel_events[workflow.workflow_id] = cancel_event
+        self._active_workflows[workflow.workflow_id] = {
+            "workflow_id": workflow.workflow_id,
+            "workflow_type": workflow.workflow_type,
+            "status": "running",
+            "started_at": self._timestamp(),
+            "updated_at": self._timestamp(),
+            "completed_at": None,
+            "metadata": dict(workflow.metadata),
+            "final_states": {},
+            "active_tasks": [],
+        }
         self.memory.put(workflow_ns, "metadata", workflow.metadata)
         self.memory.put(workflow_ns, "workflow_type", workflow.workflow_type)
         self.memory.put(workflow_ns, "task_order", [task.task_id for task in workflow.tasks])
@@ -49,15 +83,20 @@ class WorkflowController:
 
         self.scheduler.enqueue_many(graph.ready_tasks())
         await self._emit_ready_events(workflow.workflow_id, graph.ready_tasks())
+        self._refresh_workflow_state(workflow, graph, status="running")
 
         in_flight: Dict[asyncio.Task[TaskResult], TaskSpec] = {}
 
         while not graph.all_terminal():
+            if cancel_event.is_set():
+                await self._cancel_remaining_tasks(workflow, graph, in_flight)
+                break
             while self.scheduler.has_capacity():
                 next_task = self.scheduler.start_next()
                 if next_task is None:
                     break
                 graph.mark_running(next_task.task_id)
+                self._refresh_workflow_state(workflow, graph, status="running")
                 await self.event_bus.publish(
                     EventEnvelope(
                         event_type="task.dispatched",
@@ -84,6 +123,16 @@ class WorkflowController:
                 self.scheduler.complete(task_spec.task_id)
                 try:
                     result = future.result()
+                except asyncio.CancelledError:
+                    result = TaskResult(
+                        task_id=task_spec.task_id,
+                        status=TaskResultStatus.FAILED,
+                        error=TaskError(
+                            message="workflow cancellation requested",
+                            error_type="cancelled",
+                            transient=False,
+                        ),
+                    )
                 except Exception as exc:
                     result = TaskResult(
                         task_id=task_spec.task_id,
@@ -95,6 +144,7 @@ class WorkflowController:
                         ),
                     )
                 await self._process_result(workflow, graph, task_spec, result)
+                self._refresh_workflow_state(workflow, graph, status="cancel_requested" if cancel_event.is_set() else "running")
 
         final_states = {
             task_id: graph.get_state(task_id).value for task_id in graph.tasks
@@ -111,9 +161,17 @@ class WorkflowController:
                 event_type="workflow.completed",
                 workflow_id=workflow.workflow_id,
                 source="controller",
-                payload={"final_states": final_states},
+                payload={"final_states": final_states, "cancelled": cancel_event.is_set()},
             )
         )
+        self._refresh_workflow_state(
+            workflow,
+            graph,
+            status="cancelled" if cancel_event.is_set() else "completed",
+            final_states=final_states,
+            completed=True,
+        )
+        self._workflow_cancel_events.pop(workflow.workflow_id, None)
         return summary
 
     async def _block_unrunnable_tasks(self, workflow_id: str, graph: TaskGraph) -> None:
@@ -145,6 +203,45 @@ class WorkflowController:
                     payload={"agent_name": task.agent_name},
                 )
             )
+
+    async def _cancel_remaining_tasks(
+        self,
+        workflow: WorkflowSpec,
+        graph: TaskGraph,
+        in_flight: Dict[asyncio.Task[TaskResult], TaskSpec],
+    ) -> None:
+        cancellation_reason = "workflow cancellation requested"
+        for future in list(in_flight):
+            future.cancel()
+        if in_flight:
+            await asyncio.gather(*in_flight.keys(), return_exceptions=True)
+        for future, task_spec in list(in_flight.items()):
+            self.scheduler.complete(task_spec.task_id)
+            if graph.get_state(task_spec.task_id) == TaskState.RUNNING:
+                graph.mark_cancelled(task_spec.task_id, cancellation_reason)
+                await self.event_bus.publish(
+                    EventEnvelope(
+                        event_type="task.blocked",
+                        workflow_id=workflow.workflow_id,
+                        task_id=task_spec.task_id,
+                        source="controller",
+                        payload={"reason": cancellation_reason, "state": TaskState.CANCELLED.value},
+                    )
+                )
+        in_flight.clear()
+        for task_id, state in list(graph.states.items()):
+            if state in {TaskState.PENDING, TaskState.READY, TaskState.RETRY_WAITING}:
+                graph.mark_cancelled(task_id, cancellation_reason)
+                await self.event_bus.publish(
+                    EventEnvelope(
+                        event_type="task.blocked",
+                        workflow_id=workflow.workflow_id,
+                        task_id=task_id,
+                        source="controller",
+                        payload={"reason": cancellation_reason, "state": TaskState.CANCELLED.value},
+                    )
+                )
+        self._refresh_workflow_state(workflow, graph, status="cancelled")
 
     def _current_attempt(self, workflow_ns: str, task_id: str) -> int:
         task_results = self.memory.get(workflow_ns, "task_results") or {}
@@ -263,6 +360,29 @@ class WorkflowController:
                     payload={"reason": graph.block_reasons.get(blocked_id, "")},
                 )
             )
+
+    def _refresh_workflow_state(
+        self,
+        workflow: WorkflowSpec,
+        graph: TaskGraph,
+        status: str,
+        final_states: Dict[str, str] | None = None,
+        completed: bool = False,
+    ) -> None:
+        self._active_workflows[workflow.workflow_id] = {
+            **self._active_workflows.get(workflow.workflow_id, {}),
+            "workflow_id": workflow.workflow_id,
+            "workflow_type": workflow.workflow_type,
+            "status": status,
+            "updated_at": self._timestamp(),
+            "completed_at": self._timestamp() if completed else self._active_workflows.get(workflow.workflow_id, {}).get("completed_at"),
+            "metadata": dict(workflow.metadata),
+            "active_tasks": [task_id for task_id, state in graph.states.items() if state in {TaskState.READY, TaskState.RUNNING, TaskState.RETRY_WAITING}],
+            "final_states": final_states or {task_id: state.value for task_id, state in graph.states.items()},
+        }
+
+    def _timestamp(self) -> datetime:
+        return datetime.now(timezone.utc)
 
     async def _emit_domain_events(
         self, workflow_id: str, task_id: str, result: TaskResult
