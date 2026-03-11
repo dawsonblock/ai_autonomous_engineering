@@ -14,6 +14,11 @@ class LocalizationMetrics:
         true_span: Optional[Tuple[int, int]] = None,
     ) -> Dict[str, Any]:
         metrics = {
+            "file_top1": False,
+            "file_top5": False,
+            "function_top3": False,
+            "span_overlap": 0.0,
+            "lines_exposed_to_patcher": sum(max(0, span.end_line - span.start_line + 1) for span in result.spans),
             "correct_file_in_top_1": False,
             "correct_file_in_top_3": False,
             "correct_file_in_top_5": False,
@@ -25,18 +30,18 @@ class LocalizationMetrics:
             "total_localized_spans": len(result.spans),
         }
 
-        # Check files
         top_files = [f.file_path for f in result.files]
         if true_file in top_files:
             idx = top_files.index(true_file)
             if idx < 1:
+                metrics["file_top1"] = True
                 metrics["correct_file_in_top_1"] = True
             if idx < 3:
                 metrics["correct_file_in_top_3"] = True
             if idx < 5:
+                metrics["file_top5"] = True
                 metrics["correct_file_in_top_5"] = True
 
-        # Check functions
         if true_function:
             top_funcs = [f.function_name for f in result.functions]
             if true_function in top_funcs:
@@ -44,20 +49,23 @@ class LocalizationMetrics:
                 if idx < 1:
                     metrics["correct_function_in_top_1"] = True
                 if idx < 3:
+                    metrics["function_top3"] = True
                     metrics["correct_function_in_top_3"] = True
 
-        # Check spans
         if true_span:
             for span in result.spans:
-                if span.file_path == true_file:
-                    overlap_start = max(span.start_line, true_span[0])
-                    overlap_end = min(span.end_line, true_span[1])
-                    if overlap_start <= overlap_end:
-                        metrics["span_contains_true_edited_lines"] = True
-                        intersection = overlap_end - overlap_start + 1
-                        union = (span.end_line - span.start_line + 1) + (true_span[1] - true_span[0] + 1) - intersection
-                        iou = intersection / union
-                        if iou > metrics["edit_span_overlap_iou"]:
-                            metrics["edit_span_overlap_iou"] = iou
+                if span.file_path != true_file:
+                    continue
+                overlap_start = max(span.start_line, true_span[0])
+                overlap_end = min(span.end_line, true_span[1])
+                if overlap_start > overlap_end:
+                    continue
+                metrics["span_contains_true_edited_lines"] = True
+                intersection = overlap_end - overlap_start + 1
+                union = (span.end_line - span.start_line + 1) + (true_span[1] - true_span[0] + 1) - intersection
+                iou = intersection / union
+                if iou > metrics["edit_span_overlap_iou"]:
+                    metrics["edit_span_overlap_iou"] = iou
+                    metrics["span_overlap"] = iou
 
         return metrics

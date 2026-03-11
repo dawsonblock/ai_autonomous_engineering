@@ -5,9 +5,9 @@ import pytest
 
 from aae.agents.micro_agents.coding.patch_writer_agent import PatchWriterAgent
 from aae.contracts.micro_agents import PatchPlan
+from aae.evaluation.benchmark_runner import BenchmarkRunner
 from aae.exploration.branch_generator import BranchGenerator
 from aae.patching.patch_generator import HybridPatchGenerator
-from evaluation.benchmark_runner import BenchmarkRunner
 
 
 BENCHMARK_REPO = Path(__file__).resolve().parents[1] / "fixtures" / "benchmark_guard_repo"
@@ -63,6 +63,9 @@ async def test_benchmark_runner_produces_local_report(tmp_path: Path):
                     "case_id": "guard-empty-token",
                     "repo_path": str(BENCHMARK_REPO),
                     "goal": "Fix authenticate empty token failure",
+                    "expected_file": "auth.py",
+                    "expected_function": "authenticate",
+                    "expected_edit_lines": [4, 8],
                 }
             ]
         ),
@@ -75,7 +78,11 @@ async def test_benchmark_runner_produces_local_report(tmp_path: Path):
     assert report["records"]
     assert report["records"][0]["baseline_returncode"] != 0
     assert report["records"][0]["selected_branch_id"]
-    assert report["records"][0]["fixed"] is True
+    assert report["records"][0]["branch_succeeded"] is True
+    assert report["records"][0]["trust_level"] in {"strict", "degraded"}
+    assert report["records"][0]["fixed"] is (report["records"][0]["trust_level"] == "strict")
+    assert "strict_fix_rate" in report["metrics"]
+    assert report["records"][0]["localization_metrics"]["file_top1"] is True
     assert "metrics" in report
     assert Path(report["report_path"]).exists()
     assert Path(report["markdown_report_path"]).exists()

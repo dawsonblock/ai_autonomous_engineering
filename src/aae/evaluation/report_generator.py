@@ -15,9 +15,11 @@ class ReportGenerator:
             "",
             "## Metrics",
             "",
-            "- Fix rate: %s" % metrics.get("fix_rate", 0.0),
+            "- Strict fix rate: %s" % metrics.get("strict_fix_rate", 0.0),
+            "- Raw fix rate: %s" % metrics.get("raw_fix_rate", 0.0),
+            "- Degraded runs: %s" % metrics.get("degraded_run_count", 0),
             "- Median patch size: %s" % metrics.get("median_patch_size", 0),
-            "- Runtime per success (min): %s" % metrics.get("runtime_per_success_min", 0.0),
+            "- Runtime per strict success (min): %s" % metrics.get("runtime_per_success_min", 0.0),
             "- Regression rate: %s" % metrics.get("regression_rate", 0.0),
             "",
             "## Regression Gates",
@@ -29,13 +31,19 @@ class ReportGenerator:
             "",
         ]
         for record in report.get("records", []):
+            localization = record.get("localization_metrics", {})
             lines.extend(
                 [
                     "### %s" % record.get("case_id", "unknown"),
                     "",
-                    "- Fixed: %s" % record.get("fixed", False),
+                    "- Fixed (strict): %s" % record.get("fixed", False),
+                    "- Branch succeeded: %s" % record.get("branch_succeeded", False),
+                    "- Execution mode: %s" % record.get("execution_mode", ""),
+                    "- Trust level: %s" % record.get("trust_level", ""),
                     "- Patch size: %s" % record.get("patch_size", 0),
                     "- Selected branch: %s" % record.get("selected_branch_id", ""),
+                    "- Localization file_top1: %s" % localization.get("file_top1", False),
+                    "- Localization function_top3: %s" % localization.get("function_top3", False),
                     "",
                 ]
             )

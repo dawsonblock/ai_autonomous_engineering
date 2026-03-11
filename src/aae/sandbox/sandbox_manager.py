@@ -114,11 +114,13 @@ class SandboxManager:
             self.container_pool.release(lease)
 
     async def checkpoint(self, repo_path: str, checkpoint_id: str) -> bool:
-        # Create a git branch for the checkpoint
+        if not (Path(repo_path) / ".git").exists():
+            return False
         result = await self.job_executor.run("git branch aae-checkpoint-%s" % checkpoint_id, workdir=repo_path)
         return result.returncode == 0
 
     async def rollback(self, repo_path: str, checkpoint_id: str) -> bool:
-        # Force checkout the checkpoint branch
+        if not (Path(repo_path) / ".git").exists():
+            return False
         result = await self.job_executor.run("git checkout -f aae-checkpoint-%s" % checkpoint_id, workdir=repo_path)
         return result.returncode == 0
