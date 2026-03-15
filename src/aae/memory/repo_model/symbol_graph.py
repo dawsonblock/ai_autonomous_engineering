@@ -49,12 +49,16 @@ class SymbolGraph:
         """
         Record that 'caller' calls 'callee'.
 
-        The arguments are expected to be internal symbol keys where possible
-        (i.e., '<file_path>:<name>'). If bare names are used and are not
-        unique, the call graph may be ambiguous.
+        The arguments may be internal symbol keys or bare names.  When bare
+        names resolve to known symbols the call is recorded against the
+        internal keys so that ``callers_of`` / ``callees_of`` work correctly.
         """
-        self._callers.setdefault(callee, set()).add(caller)
-        self._callees.setdefault(caller, set()).add(callee)
+        caller_keys = self._resolve_to_keys(caller) or {caller}
+        callee_keys = self._resolve_to_keys(callee) or {callee}
+        for ck in caller_keys:
+            for ce in callee_keys:
+                self._callers.setdefault(ce, set()).add(ck)
+                self._callees.setdefault(ck, set()).add(ce)
 
     def callers_of(self, symbol_name: str) -> Set[str]:
         """

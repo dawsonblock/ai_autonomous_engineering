@@ -46,8 +46,8 @@ def test_symbol_graph_tracks_calls():
     graph.add_symbol(SymbolInfo(name="bar", kind="function", file_path="a.py"))
     graph.add_call("foo", "bar")
 
-    assert "foo" in graph.callers_of("bar")
-    assert "bar" in graph.callees_of("foo")
+    assert "a.py:foo" in graph.callers_of("bar")
+    assert "a.py:bar" in graph.callees_of("foo")
 
 
 def test_symbol_graph_impacted_by():
@@ -59,8 +59,8 @@ def test_symbol_graph_impacted_by():
     graph.add_call("top", "middle")
 
     impacted = graph.impacted_by("base")
-    assert "middle" in impacted
-    assert "top" in impacted
+    assert "b.py:middle" in impacted
+    assert "c.py:top" in impacted
 
 
 def test_dependency_graph_tracks_imports():
