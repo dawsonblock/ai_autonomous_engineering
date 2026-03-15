@@ -45,7 +45,7 @@ class Replanner:
         if "timeout" in error.lower():
             return ReplanDecision(
                 action="retry",
-                reason="timeout — retrying step",
+                reason="timeout - retrying step",
                 retry_step=failed_step,
             )
 

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from aae.memory.repo_model import DependencyGraph, FileIndex, RepoModel, SymbolGraph, SymbolInfo
+from aae.memory.repo_model import DependencyGraph, FileIndex, FileEntry, RepoModel, SymbolGraph, SymbolInfo
 
 
 def test_file_index_scans_directory(tmp_path: Path):
@@ -95,8 +95,8 @@ def test_repo_model_update_from_repo(tmp_path: Path):
 
 def test_repo_model_impacted_tests():
     model = RepoModel()
-    model.files.files["src/utils.py"] = type("FE", (), {"path": "src/utils.py", "language": "python", "size_bytes": 100, "symbols": [], "imports": []})()
-    model.files.files["tests/test_utils.py"] = type("FE", (), {"path": "tests/test_utils.py", "language": "python", "size_bytes": 100, "symbols": [], "imports": []})()
+    model.files.files["src/utils.py"] = FileEntry(path="src/utils.py", language="python", size_bytes=100)
+    model.files.files["tests/test_utils.py"] = FileEntry(path="tests/test_utils.py", language="python", size_bytes=100)
     model.dependencies.add_import("tests/test_utils.py", "src/utils.py")
 
     tests = model.impacted_tests("src/utils.py")

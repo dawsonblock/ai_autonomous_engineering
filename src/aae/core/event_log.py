@@ -42,6 +42,7 @@ class EventLog:
     def __init__(self, log_path: str | None = None) -> None:
         self._records: List[EventRecord] = []
         self._log_path = Path(log_path) if log_path else None
+        self._log_dir_created = False
 
     def record(self, event: EventRecord) -> None:
         self._records.append(event)
@@ -79,7 +80,9 @@ class EventLog:
         return len(self._records)
 
     def _persist(self, event: EventRecord) -> None:
-        self._log_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self._log_dir_created:
+            self._log_path.parent.mkdir(parents=True, exist_ok=True)
+            self._log_dir_created = True
         with self._log_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(event.to_dict(), sort_keys=True))
             handle.write("\n")

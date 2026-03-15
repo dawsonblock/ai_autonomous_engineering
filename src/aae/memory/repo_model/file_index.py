@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Set
@@ -49,8 +48,7 @@ class FileIndex:
         for file_path in sorted(root.rglob("*")):
             if not file_path.is_file():
                 continue
-            relative_parts = set(file_path.relative_to(root).parts)
-            if relative_parts & _IGNORED_DIRS:
+            if any(part in _IGNORED_DIRS for part in file_path.relative_to(root).parts):
                 continue
             if file_path.name.startswith("."):
                 continue
