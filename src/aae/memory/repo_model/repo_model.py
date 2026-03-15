@@ -17,8 +17,6 @@ class RepoModel:
         self.files.scan(path)
         return {
             "file_count": self.files.count,
-            "symbol_count": len(self.symbols.symbols),
-            "dependency_count": self.dependencies.module_count,
         }
 
     def impacted_modules(self, changed_file: str) -> Set[str]:
