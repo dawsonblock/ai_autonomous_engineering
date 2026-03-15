@@ -44,6 +44,8 @@ class FileIndex:
         self.files: Dict[str, FileEntry] = {}
 
     def scan(self, repo_path: str) -> None:
+        # Reset the index so repeated scans reflect the current filesystem state
+        self.files.clear()
         root = Path(repo_path).resolve()
         for file_path in sorted(root.rglob("*")):
             if not file_path.is_file():
