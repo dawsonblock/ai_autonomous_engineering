@@ -31,10 +31,16 @@ class Verifier:
     def verify(self, action: ActionSpec, result: ActionResult) -> ActionResult:
         for rule in self.rules:
             if not rule.check(action, result):
+                verification_error = "verification failed: %s" % type(rule).__name__
+                if result.error:
+                    error = "%s\n%s" % (result.error, verification_error)
+                else:
+                    error = verification_error
                 return ActionResult(
                     action_id=action.action_id,
                     success=False,
-                    error="verification failed: %s" % type(rule).__name__,
+                    output=result.output,
+                    error=error,
                     artifacts=result.artifacts,
                 )
         return result
