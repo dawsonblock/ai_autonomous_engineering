@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict
 
-from aae.core.event_log import EventLog, EventRecord
+from aae.core.event_log import EventLog
 
 
 @dataclass
