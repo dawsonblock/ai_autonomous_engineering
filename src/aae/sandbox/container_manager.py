@@ -95,6 +95,4 @@ def _should_fallback_to_local(stderr: str, exit_code: int = 1) -> bool:
         ]
     ):
         return True
-    if exit_code == 127 and "not found" in normalized:
-        return True
     return False
