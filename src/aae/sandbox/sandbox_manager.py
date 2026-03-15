@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import tempfile
+import time
 import uuid
 from pathlib import Path
 
@@ -78,6 +80,15 @@ class SandboxManager:
             if result.transport == "local-fallback":
                 command = spec.commands[0] if spec.commands else ""
                 local_result = await self.job_executor.run(command, workdir=workspace, environment=env)
+                if spec.trace_enabled:
+                    self._write_execution_trace(
+                        trace_path,
+                        spec.command_id,
+                        command,
+                        local_result.returncode,
+                        local_result.stdout,
+                        local_result.stderr,
+                    )
                 return self.artifact_collector.collect(
                     result.model_copy(
                         update={
@@ -100,6 +111,15 @@ class SandboxManager:
                         }
                     )
                 )
+            if spec.trace_enabled:
+                self._write_execution_trace(
+                    trace_path,
+                    spec.command_id,
+                    " && ".join(spec.commands),
+                    result.exit_code,
+                    result.stdout,
+                    result.stderr,
+                )
             return self.artifact_collector.collect(
                 result.model_copy(
                     update={
@@ -120,6 +140,33 @@ class SandboxManager:
             )
         finally:
             self.container_pool.release(lease)
+
+    @staticmethod
+    def _write_execution_trace(trace_path: str, command_id: str, command: str, returncode: int, stdout: str, stderr: str) -> None:
+        path = Path(trace_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            "event_type": "execution",
+            "function": "sandbox_exec",
+            "file_path": "",
+            "line": 0,
+            "command_id": command_id,
+            "test_id": "",
+            "call_id": "exec-%s" % uuid.uuid4().hex[:10],
+            "parent_call_id": "",
+            "args_summary": command,
+            "result_summary": "returncode=%d" % returncode,
+            "exception_type": "" if returncode == 0 else "NonZeroExit",
+            "timestamp": str(time.time()),
+            "metadata": {
+                "returncode": returncode,
+                "stdout_tail": stdout[-500:] if stdout else "",
+                "stderr_tail": stderr[-500:] if stderr else "",
+            },
+        }
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, sort_keys=True))
+            handle.write("\n")
 
     async def checkpoint(self, repo_path: str, checkpoint_id: str) -> bool:
         if not (Path(repo_path) / ".git").exists():
