@@ -86,6 +86,10 @@ class ActionGraph:
                 in_degree[dependent] -= 1
                 if in_degree[dependent] == 0:
                     queue.append(dependent)
+        if len(order) != len(self.nodes):
+            raise ValueError(
+                "Cycle detected in ActionGraph; topological order not possible"
+            )
         return order
 
 
