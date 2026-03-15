@@ -34,6 +34,14 @@ class ActionGraph:
             self._states[task_id] = ActionState.READY
 
     def add_edge(self, from_task: str, to_task: str) -> None:
+        missing_tasks = [
+            task_id for task_id in (from_task, to_task) if task_id not in self._states
+        ]
+        if missing_tasks:
+            raise ValueError(
+                f"Cannot add edge from '{from_task}' to '{to_task}': "
+                f"unknown task id(s): {', '.join(missing_tasks)}"
+            )
         self.edges.append((from_task, to_task))
         self._dependents.setdefault(from_task, set()).add(to_task)
         self._dependencies.setdefault(to_task, set()).add(from_task)
