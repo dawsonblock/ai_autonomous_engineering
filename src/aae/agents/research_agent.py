@@ -31,7 +31,12 @@ class ResearchAgent(BaseMicroAgent):
         return {"status": "claims_extracted", "claim_ids": claim_ids, "count": len(claim_ids)}
 
     async def gather_evidence(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
-        claim_id = task.get("claim_id", "")
+        claim_id = task.get("claim_id")
+        if not claim_id:
+            return {
+                "status": "invalid_claim_id",
+                "reason": "claim_id is required to gather evidence.",
+            }
         evidence_items = task.get("evidence", [])
         evidence_ids = []
         for item in evidence_items:
