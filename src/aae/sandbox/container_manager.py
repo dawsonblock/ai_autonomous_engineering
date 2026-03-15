@@ -56,7 +56,7 @@ class ContainerManager:
         stdout, stderr = await process.communicate()
         decoded_stdout = stdout.decode("utf-8", "ignore")
         decoded_stderr = stderr.decode("utf-8", "ignore")
-        if process.returncode != 0 and _should_fallback_to_local(decoded_stderr):
+        if process.returncode != 0 and _should_fallback_to_local(decoded_stderr, process.returncode):
             return SandboxRunResult(
                 container_id="local-fallback",
                 commands=spec.commands,
@@ -82,9 +82,9 @@ class ContainerManager:
         )
 
 
-def _should_fallback_to_local(stderr: str) -> bool:
+def _should_fallback_to_local(stderr: str, exit_code: int = 1) -> bool:
     normalized = stderr.lower()
-    return any(
+    if any(
         phrase in normalized
         for phrase in [
             "cannot connect to the docker daemon",
@@ -93,4 +93,8 @@ def _should_fallback_to_local(stderr: str) -> bool:
             "error during connect",
             "no such host",
         ]
-    )
+    ):
+        return True
+    if exit_code == 127 and "not found" in normalized:
+        return True
+    return False
