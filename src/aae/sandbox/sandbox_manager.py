@@ -80,7 +80,15 @@ class SandboxManager:
             if result.transport == "local-fallback":
                 command = spec.commands[0] if spec.commands else ""
                 local_result = await self.job_executor.run(command, workdir=workspace, environment=env)
-                self._write_execution_trace(trace_path, spec.command_id, command, local_result.returncode, local_result.stdout, local_result.stderr)
+                if spec.trace_enabled:
+                    self._write_execution_trace(
+                        trace_path,
+                        spec.command_id,
+                        command,
+                        local_result.returncode,
+                        local_result.stdout,
+                        local_result.stderr,
+                    )
                 return self.artifact_collector.collect(
                     result.model_copy(
                         update={
@@ -103,7 +111,15 @@ class SandboxManager:
                         }
                     )
                 )
-            self._write_execution_trace(trace_path, spec.command_id, " && ".join(spec.commands), result.exit_code, result.stdout, result.stderr)
+            if spec.trace_enabled:
+                self._write_execution_trace(
+                    trace_path,
+                    spec.command_id,
+                    " && ".join(spec.commands),
+                    result.exit_code,
+                    result.stdout,
+                    result.stderr,
+                )
             return self.artifact_collector.collect(
                 result.model_copy(
                     update={
